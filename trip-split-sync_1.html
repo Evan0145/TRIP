@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>旅行分帳(連動版)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+:root{
+  --ink:#1C3A3D; --paper:#EDE6D6; --paper-dark:#E2D9C4;
+  --stamp:#B5432E; --brass:#A8823D; --good:#3F6650; --line:#C9BFA6;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:#fff;color:var(--ink);font-family:'Inter',sans-serif;color-scheme:light;}
+#app{max-width:480px;margin:0 auto;padding:24px 18px 60px;}
+h1{font-family:'Fraunces',serif;font-size:22px;font-weight:600;margin:0;}
+.row{display:flex;align-items:center;justify-content:space-between;}
+.header{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+.header .left{display:flex;align-items:center;gap:10px;}
+.back{background:none;border:none;cursor:pointer;color:var(--ink);padding:4px;display:flex;font-size:20px;}
+.section-label{font-size:12.5px;color:var(--ink);opacity:.55;margin-bottom:8px;letter-spacing:.3px;}
+.field{margin-bottom:16px;}
+.field-label{font-size:13px;color:var(--ink);opacity:.65;margin-bottom:6px;}
+input,select{width:100%;box-sizing:border-box;border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;font-size:15px;font-family:'Inter',sans-serif;color:var(--ink);background:#fff;outline:none;}
+input::placeholder{color:var(--ink);opacity:.4;}
+.btn{border:none;border-radius:9px;padding:11px 18px;font-size:14.5px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;}
+.btn.full{width:100%;}
+.btn.default{background:var(--paper-dark);color:var(--ink);}
+.btn.primary{background:var(--stamp);color:#fff;}
+.btn.brass{background:var(--brass);color:#fff;}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
+.btn.danger{background:transparent;color:var(--stamp);border:1.5px solid #B5432E55;}
+.btn:disabled{opacity:.45;cursor:default;}
+.btn:active:not(:disabled){transform:scale(.97);}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--ink);border:1.5px solid var(--line);border-radius:20px;padding:6px 12px;font-size:13.5px;cursor:pointer;user-select:none;}
+.chip.fixed{background:var(--paper-dark);cursor:default;}
+.chip.selected{background:var(--stamp);color:#fff;border-color:var(--stamp);}
+.chip .x{cursor:pointer;opacity:.6;display:flex;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.trip-card{background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;}
+.trip-card.muted{background:#F5F1E6;opacity:.75;}
+.trip-name{font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin-bottom:3px;}
+.trip-status{font-size:12.5px;opacity:.55;}
+.perf{position:relative;height:1px;margin:16px 0;}
+.perf::before{content:"";position:absolute;inset:0;border-top:2px dashed var(--line);}
+.mono{font-family:'IBM Plex Mono',monospace;}
+.total-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;}
+.total-num{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:500;}
+.actions{display:flex;gap:10px;margin-bottom:22px;}
+.actions .btn{flex:1;}
+.expense-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #C9BFA655;}
+.expense-icon{width:34px;height:34px;border-radius:9px;background:var(--paper);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;}
+.expense-note{font-size:14.5px;font-weight:500;}
+.expense-meta{font-size:12px;opacity:.5;}
+.expense-amount{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:500;}
+.del{cursor:pointer;opacity:.35;font-size:15px;}
+.notice{background:#FBEAF0;border:1.5px solid #F0997B55;border-radius:9px;padding:10px 14px;font-size:13px;color:#712B13;margin-bottom:18px;}
+.confirm-box{border:1.5px solid #B5432E55;border-radius:10px;padding:14px;}
+.confirm-box .btn{flex:1;}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.bar-name{width:52px;font-size:13px;flex-shrink:0;}
+.bar-track{flex:1;height:22px;background:var(--paper);border-radius:6px;overflow:hidden;position:relative;}
+.bar-fill{height:100%;border-radius:6px;}
+.bar-value{width:88px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;flex-shrink:0;}
+table.cat-table{width:100%;border-collapse:collapse;}
+table.cat-table td{padding:5px 0;font-size:13px;}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.pie{width:120px;height:120px;border-radius:50%;flex-shrink:0;}
+.empty{text-align:center;padding:50px 20px;}
+.empty .t{font-family:'Fraunces',serif;font-size:17px;margin-bottom:6px;}
+.empty .d{font-size:14px;opacity:.6;margin-bottom:22px;}
+.txn-card{display:flex;align-items:center;gap:10px;background:var(--paper);border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;font-size:14.5px;}
+.net-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #C9BFA655;}
+.net-name{font-size:14.5px;font-weight:500;}
+.net-meta{font-size:12px;opacity:.5;}
+.net-val{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:500;}
+.link{color:var(--brass);cursor:pointer;font-size:13px;font-weight:500;}
+.badge{font-size:11.5px;background:var(--paper-dark);color:var(--ink);opacity:.7;border-radius:20px;padding:3px 10px;cursor:pointer;}
+.spinner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:12px;opacity:.6;font-size:14px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="module">
+/* ============================================================
+   Firebase 設定 —— 請填入你自己 Firebase 專案的設定值
+   (Firebase Console → 專案設定 → 一般 → 你的應用程式 → SDK 設定)
+   ============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyASZbWkPRKOtIxxJZbXTetJdJbJUoIlP1U",
+  authDomain: "trip-91a46.firebaseapp.com",
+  projectId: "trip-91a46",
+  storageBucket: "trip-91a46.firebasestorage.app",
+  messagingSenderId: "284191675036",
+  appId: "1:284191675036:web:afcb46e932d9350bf95359",
+};
+
+let db = null;
+let firebaseReady = false;
+try {
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  firebaseReady = firebaseConfig.apiKey !== "YOUR_API_KEY";
+} catch (e) {
+  firebaseReady = false;
+}
+
+/* ============================================================
+   資料 / 工具函式
+   ============================================================ */
+const CATEGORIES = [
+  { key:"FOOD", label:"餐飲", icon:"🍜" },
+  { key:"TRANSPORT", label:"交通", icon:"🚗" },
+  { key:"HOTEL", label:"住宿", icon:"🛏" },
+  { key:"SHOPPING", label:"購物", icon:"🛍" },
+  { key:"TICKET", label:"門票", icon:"🎫" },
+  { key:"OTHER", label:"其他", icon:"⋯" },
+];
+const CAT_COLOR = { FOOD:"#B5432E", TRANSPORT:"#A8823D", HOTEL:"#3F6650", SHOPPING:"#6B4C8A", TICKET:"#2F6690", OTHER:"#8A8474" };
+const PERSON_COLORS = ["#B5432E","#A8823D","#3F6650","#6B4C8A","#2F6690","#8A8474"];
+const personColor = i => PERSON_COLORS[i % PERSON_COLORS.length];
+
+function uid(p){ return p + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function fmt(n){ const v = Math.round((n+Number.EPSILON)*10)/10; return v.toLocaleString("zh-TW",{maximumFractionDigits:1}); }
+function esc(s){ return (s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function sanitizeAmount(v){
+  let s = v.replace(/[^0-9.]/g, "");
+  const firstDot = s.indexOf(".");
+  if(firstDot !== -1) s = s.slice(0, firstDot+1) + s.slice(firstDot+1).replace(/\./g, "");
+  return s;
+}
+
+function simplifyDebts(net){
+  const creditors=[], debtors=[];
+  Object.entries(net).forEach(([name,amt])=>{
+    if(amt>0.05) creditors.push({name,amt});
+    else if(amt<-0.05) debtors.push({name,amt:-amt});
+  });
+  creditors.sort((a,b)=>b.amt-a.amt);
+  debtors.sort((a,b)=>b.amt-a.amt);
+  const txns=[]; let i=0,j=0;
+  while(i<debtors.length && j<creditors.length){
+    const pay=Math.min(debtors[i].amt, creditors[j].amt);
+    txns.push({from:debtors[i].name, to:creditors[j].name, amount:pay});
+    debtors[i].amt-=pay; creditors[j].amt-=pay;
+    if(debtors[i].amt<0.05) i++;
+    if(creditors[j].amt<0.05) j++;
+  }
+  return txns;
+}
+
+/* ============================================================
+   雲端同步層(取代原本的 localStorage 存取)
+   ============================================================ */
+let unsubTrips = null;
+let unsubTripData = null;
+
+function getSavedSpaceCode(){ return localStorage.getItem("triptally:spaceCode"); }
+function rememberSpaceCode(code){ localStorage.setItem("triptally:spaceCode", code); }
+function forgetSpaceCode(){ localStorage.removeItem("triptally:spaceCode"); }
+
+function subscribeTrips(code){
+  if(unsubTrips) unsubTrips();
+  unsubTrips = onSnapshot(doc(db, "spaces", code), (snap) => {
+    state.trips = (snap.exists() ? snap.data().trips : []) || [];
+    state.loading = false;
+    state.error = "";
+    render();
+  }, (err) => {
+    state.loading = false;
+    state.error = "連線失敗,請檢查網路或 Firebase 設定(" + err.message + ")";
+    render();
+  });
+}
+
+async function saveTripsRemote(trips){
+  try{ await setDoc(doc(db, "spaces", state.spaceCode), { trips }, { merge:true }); }
+  catch(e){ setState({ error: "儲存失敗:" + e.message }); }
+}
+
+function subscribeTripData(code, tripId){
+  if(unsubTripData) unsubTripData();
+  unsubTripData = onSnapshot(doc(db, "spaces", code, "tripData", tripId), (snap) => {
+    state.tripData = snap.exists() ? snap.data() : { members:["我"], expenses:[] };
+    render();
+  }, (err) => {
+    state.error = "連線失敗,請檢查網路或 Firebase 設定(" + err.message + ")";
+    render();
+  });
+}
+
+async function saveTripDataRemote(tripId, data){
+  try{ await setDoc(doc(db, "spaces", state.spaceCode, "tripData", tripId), data); }
+  catch(e){ setState({ error: "儲存失敗:" + e.message }); }
+}
+
+/* ============================================================
+   App 狀態
+   ============================================================ */
+let state = {
+  view: firebaseReady ? "loading" : "setupNeeded",
+  spaceCode: null,
+  trips: [], tripId:null, tripData:null, loading:true, error:"",
+  form:{ spaceInput:"", newTripName:"", newTripMembers:[], newTripDraft:"", addingMember:false, memberDraft:"", confirmEnd:false,
+    amount:"", category:"FOOD", note:"", date:new Date().toISOString().slice(0,10), payer:null, participants:[], splitMethod:"equal", customAmounts:{} } };
+
+function setState(patch){ state = {...state, ...patch}; render(); }
+function setForm(patch){ state = {...state, form:{...state.form, ...patch}}; render(); }
+function setFormSilent(patch){ state = {...state, form:{...state.form, ...patch}}; }
+
+function boot(){
+  if(!firebaseReady){ setState({ view:"setupNeeded" }); return; }
+  const saved = getSavedSpaceCode();
+  if(saved){ joinSpace(saved); }
+  else { setState({ view:"spaceGate" }); }
+}
+
+function joinSpace(codeRaw){
+  const code = (codeRaw||"").trim();
+  if(!code) return;
+  rememberSpaceCode(code);
+  state.spaceCode = code;
+  state.loading = true;
+  state.view = "home";
+  subscribeTrips(code);
+  render();
+}
+function switchSpace(){
+  if(unsubTrips){ unsubTrips(); unsubTrips=null; }
+  if(unsubTripData){ unsubTripData(); unsubTripData=null; }
+  forgetSpaceCode();
+  setState({ view:"spaceGate", spaceCode:null, trips:[], tripId:null, tripData:null, form:{...state.form, spaceInput:""} });
+}
+
+function openTrip(id){
+  subscribeTripData(state.spaceCode, id);
+  setState({ tripId:id, tripData:null, view:"trip" });
+}
+function backHome(){
+  if(unsubTripData){ unsubTripData(); unsubTripData=null; }
+  setState({ view:"home", tripId:null, tripData:null });
+}
+
+function createTrip(){
+  const name = state.form.newTripName.trim();
+  if(!name) return;
+  const id = uid("T");
+  const trips = [...state.trips, { id, name, status:"進行中", createdAt:Date.now() }];
+  const data = { members:["我", ...state.form.newTripMembers], expenses:[] };
+  saveTripsRemote(trips);
+  saveTripDataRemote(id, data);
+  subscribeTripData(state.spaceCode, id);
+  setState({ trips, tripId:id, tripData:data, view:"trip", form:{...state.form, newTripName:"", newTripMembers:[], newTripDraft:""} });
+}
+
+function endTrip(){
+  const trips = state.trips.map(t => t.id===state.tripId ? {...t, status:"已結束"} : t);
+  saveTripsRemote(trips);
+  setState({ trips, form:{...state.form, confirmEnd:false} });
+}
+function reopenTrip(id){
+  const trips = state.trips.map(t => t.id===id ? {...t, status:"進行中"} : t);
+  saveTripsRemote(trips);
+  setState({ trips });
+}
+
+function addMember(){
+  const name = state.form.memberDraft.trim();
+  if(!name || state.tripData.members.includes(name)){ setForm({addingMember:false, memberDraft:""}); return; }
+  const tripData = {...state.tripData, members:[...state.tripData.members, name]};
+  saveTripDataRemote(state.tripId, tripData);
+  setState({ tripData, form:{...state.form, addingMember:false, memberDraft:""} });
+}
+
+function deleteExpense(expenseId){
+  const tripData = {...state.tripData, expenses: state.tripData.expenses.filter(e=>e.id!==expenseId)};
+  saveTripDataRemote(state.tripId, tripData);
+  setState({ tripData });
+}
+
+function openAddExpense(){
+  const members = state.tripData.members;
+  setState({ view:"addExpense", form:{...state.form, amount:"", category:"FOOD", note:"", date:new Date().toISOString().slice(0,10),
+    payer:members[0], participants:[...members], splitMethod:"equal", customAmounts:{} } });
+}
+
+function saveExpense(){
+  const f = state.form;
+  const total = parseFloat(f.amount) || 0;
+  if(!total || f.participants.length===0) return;
+  let shares;
+  if(f.splitMethod==="equal"){
+    shares = f.participants.map(p => ({ name:p, amount: Math.round((total/f.participants.length)*10)/10 }));
+    const diff = Math.round((total - shares.reduce((s,x)=>s+x.amount,0))*10)/10;
+    if(diff!==0) shares[0].amount = Math.round((shares[0].amount+diff)*10)/10;
+  } else {
+    const sum = f.participants.reduce((s,p)=>s+(parseFloat(f.customAmounts[p])||0),0);
+    if(Math.abs(sum-total)>=0.05) return;
+    shares = f.participants.map(p => ({ name:p, amount: parseFloat(f.customAmounts[p])||0 }));
+  }
+  const expense = { id:uid("E"), date:f.date, amount:total, category:f.category, note:f.note.trim(), payer:f.payer, participants:shares };
+  const tripData = {...state.tripData, expenses:[...state.tripData.expenses, expense]};
+  saveTripDataRemote(state.tripId, tripData);
+  setState({ tripData, view:"trip" });
+}
+
+/* ============================================================
+   畫面元件
+   ============================================================ */
+function icon(name){ return `<span aria-hidden="true">${name}</span>`; }
+
+function chip(label, opts={}){
+  const cls = ["chip"];
+  if(opts.fixed) cls.push("fixed");
+  if(opts.selected) cls.push("selected");
+  const removeBtn = opts.onRemove ? `<span class="x" onclick="event.stopPropagation();${opts.onRemove}">✕</span>` : "";
+  return `<div class="${cls.join(' ')}" ${opts.onClick?`onclick="${opts.onClick}"`:""}>${esc(label)}${removeBtn}</div>`;
+}
+
+function header(title, opts={}){
+  const back = opts.onBack ? `<button class="back" onclick="${opts.onBack}">←</button>` : "";
+  return `<div class="header row"><div class="left">${back}<h1>${esc(title)}</h1></div>${opts.right||""}</div>`;
+}
+
+function renderSetupNeeded(){
+  let html = header("旅行分帳(連動版)");
+  html += `<div class="notice" style="color:var(--ink);background:var(--paper);border-color:var(--line);">
+    這個版本需要先設定 Firebase 才能使用即時同步。<br><br>
+    請打開這個 HTML 檔案,找到 <code>firebaseConfig</code> 那一段,貼上你自己 Firebase 專案的設定值,存檔後重新整理即可。
+  </div>`;
+  return html;
+}
+
+function renderLoading(msg){
+  return `<div class="spinner"><div>⏳</div><div>${esc(msg||"連線中…")}</div></div>`;
+}
+
+function renderSpaceGate(){
+  const f = state.form;
+  let html = header("旅行分帳(連動版)");
+  html += `<div class="field"><div class="field-label">空間代碼(旅伴之間要輸入同一組)</div>
+    <input id="spaceInput" value="${esc(f.spaceInput)}" placeholder="例如:tokyo2026"
+      oninput="setFormSilent({spaceInput:this.value})" onkeydown="if(event.key==='Enter')joinSpace(document.getElementById('spaceInput').value)"></div>`;
+  html += `<div style="font-size:13px;opacity:.6;margin-bottom:18px;">第一次使用可以自己取一組代碼(建議英數混合、不容易被猜到),再把這組代碼告訴同行的旅伴,大家輸入同一組就能看到同一份帳。</div>`;
+  html += `<button class="btn primary full" onclick="joinSpace(document.getElementById('spaceInput').value)">進入</button>`;
+  if(state.error) html += `<div class="notice" style="margin-top:16px;">${esc(state.error)}</div>`;
+  return html;
+}
+
+function renderHome(){
+  const active = state.trips.filter(t=>t.status==="進行中").sort((a,b)=>b.createdAt-a.createdAt);
+  const ended = state.trips.filter(t=>t.status==="已結束").sort((a,b)=>b.createdAt-a.createdAt);
+  let html = header("旅行分帳", { right:`<span class="badge" onclick="switchSpace()">代碼:${esc(state.spaceCode)} ⇄</span>` });
+
+  if(state.loading) return html + renderLoading("讀取旅程中…");
+
+  if(state.trips.length===0){
+    html += `<div class="empty"><div class="t">還沒有旅程</div><div class="d">開始第一趟旅行,把花費記清楚。旅伴輸入同一組代碼就會即時看到。</div>
+      <button class="btn primary" onclick="setState({view:'newTrip'})">＋ 開始新旅程</button></div>`;
+    return html;
+  }
+  if(active.length){
+    html += `<div class="section-label">進行中</div>`;
+    active.forEach(t => {
+      html += `<div class="trip-card" onclick="openTrip('${t.id}')"><div><div class="trip-name">${esc(t.name)}</div><div class="trip-status">${t.status}</div></div></div>`;
+    });
+  }
+  if(ended.length){
+    html += `<div class="section-label" style="margin-top:24px;">已結束</div>`;
+    ended.forEach(t => {
+      html += `<div class="trip-card muted" onclick="openTrip('${t.id}')"><div><div class="trip-name">${esc(t.name)}</div><div class="trip-status">${t.status}</div></div>
+        <button class="btn ghost" style="padding:6px 10px;font-size:12.5px;" onclick="event.stopPropagation();reopenTrip('${t.id}')">↺ 重新開啟</button></div>`;
+    });
+  }
+  html += `<button class="btn primary full" style="margin-top:14px;" onclick="setState({view:'newTrip'})">＋ 開始新旅程</button>`;
+  return html;
+}
+
+function renderNewTrip(){
+  const f = state.form;
+  const hasActive = state.trips.some(t=>t.status==="進行中");
+  let html = header("開始新旅程", { onBack:"backHome()" });
+  if(hasActive) html += `<div class="notice">目前已有進行中的旅程。建立新旅程不會影響它,兩趟旅程資料完全獨立。</div>`;
+  html += `<div class="field"><div class="field-label">旅程名稱</div>
+    <input id="tripNameInput" value="${esc(f.newTripName)}" placeholder="例如:東京 2026"
+      oninput="setFormSilent({newTripName:this.value}); document.getElementById('createTripBtn').disabled = !this.value.trim();"></div>`;
+  html += `<div class="field"><div class="field-label">旅伴(「我」已自動加入)</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <input id="memberDraftInput" value="${esc(f.newTripDraft)}" placeholder="輸入旅伴姓名" style="flex:1;"
+        oninput="setFormSilent({newTripDraft:this.value})" onkeydown="if(event.key==='Enter')addTripMember()">
+      <button class="btn default" onclick="addTripMember()">＋</button>
+    </div>
+    <div class="chips">${chip("我",{fixed:true})}${f.newTripMembers.map(m=>chip(m,{onRemove:`removeTripMember('${esc(m)}')`})).join("")}</div>
+    </div>`;
+  html += `<button id="createTripBtn" class="btn primary full" ${!f.newTripName.trim()?"disabled":""} onclick="createTrip()">建立旅程</button>`;
+  return html;
+}
+function addTripMember(){
+  const v = state.form.newTripDraft.trim();
+  if(v && v!=="我" && !state.form.newTripMembers.includes(v)) setForm({ newTripMembers:[...state.form.newTripMembers, v], newTripDraft:"" });
+  else setForm({ newTripDraft:"" });
+}
+function removeTripMember(name){ setForm({ newTripMembers: state.form.newTripMembers.filter(m=>m!==name) }); }
+
+function renderCategoryBreakdown(expenses){
+  const totals = {};
+  expenses.forEach(e => totals[e.category] = (totals[e.category]||0) + e.amount);
+  const grand = Object.values(totals).reduce((a,b)=>a+b,0);
+  const rows = CATEGORIES.map(c=>({...c, amount: totals[c.key]||0})).filter(r=>r.amount>0).sort((a,b)=>b.amount-a.amount);
+  if(rows.length===0 || grand===0) return "";
+  let acc = 0;
+  const stops = rows.map(r => { const start = acc/grand*360; acc += r.amount; const end = acc/grand*360; return `${CAT_COLOR[r.key]} ${start}deg ${end}deg`; }).join(", ");
+  let rowsHtml = rows.map(r => {
+    const pct = r.amount/grand*100;
+    return `<tr><td><div style="display:flex;align-items:center;gap:7px;"><span class="dot" style="background:${CAT_COLOR[r.key]}"></span>${r.label}</div></td>
+      <td style="text-align:right;font-family:'IBM Plex Mono',monospace;white-space:nowrap;">${fmt(r.amount)}</td>
+      <td style="text-align:right;opacity:.55;width:40px;white-space:nowrap;padding-left:10px;">${fmt(pct)}%</td></tr>`;
+  }).join("");
+  return `<div class="section-label">分類統計</div>
+    <div style="display:flex;align-items:center;gap:18px;margin-bottom:22px;">
+      <div class="pie" style="background:conic-gradient(${stops});"></div>
+      <table class="cat-table"><tbody>${rowsHtml}</tbody></table>
+    </div>`;
+}
+
+function renderTrip(){
+  const t = state.trips.find(x=>x.id===state.tripId);
+  if(!t) return renderLoading("讀取旅程中…");
+  if(!state.tripData) return header(t.name, { onBack:"backHome()" }) + renderLoading("讀取支出中…");
+  const data = state.tripData;
+  const f = state.form;
+  const total = data.expenses.reduce((s,e)=>s+e.amount,0);
+  const sorted = [...data.expenses].sort((a,b)=> a.date<b.date?1:-1);
+
+  let html = header(t.name, { onBack:"backHome()",
+    right:`<span style="font-size:12.5px;font-weight:500;${t.status==="進行中"?"color:var(--good)":"opacity:.55"}">${t.status}</span>` });
+
+  html += `<div class="chips" style="margin-bottom:4px;">${data.members.map(m=>chip(m,{fixed:true})).join("")}
+    ${t.status==="進行中" && !f.addingMember ? `<span class="link" onclick="setForm({addingMember:true})">＋ 新增旅伴</span>` : ""}</div>`;
+  if(f.addingMember){
+    html += `<div style="display:flex;gap:8px;margin:8px 0;">
+      <input id="newMemberInput" value="${esc(f.memberDraft)}" placeholder="新旅伴姓名" style="flex:1;"
+        oninput="setFormSilent({memberDraft:this.value})"
+        onkeydown="if(event.key==='Enter')addMember()">
+      <button class="btn default" onclick="addMember()">✓</button>
+      <button class="btn ghost" onclick="setForm({addingMember:false,memberDraft:''})">✕</button></div>`;
+  }
+
+  html += `<div class="perf"></div>`;
+  html += `<div class="total-row"><span style="opacity:.6;font-size:14px;">旅程總支出</span><span class="total-num">NT$ ${fmt(total)}</span></div>`;
+
+  if(t.status==="進行中"){
+    html += `<div class="actions">
+      <button class="btn primary" onclick="openAddExpense()">📝 新增支出</button>
+      <button class="btn brass" onclick="setState({view:'settle'})">💸 結算</button></div>`;
+  } else {
+    html += `<button class="btn brass full" style="margin-bottom:22px;" onclick="setState({view:'settle'})">💸 查看結算</button>`;
+  }
+
+  html += renderCategoryBreakdown(data.expenses);
+
+  html += `<div class="section-label">支出紀錄 (${data.expenses.length})</div>`;
+  if(sorted.length===0) html += `<div style="font-size:13.5px;opacity:.5;padding:10px 0;">還沒有支出紀錄。</div>`;
+  sorted.forEach(e => {
+    const cat = CATEGORIES.find(c=>c.key===e.category) || CATEGORIES[5];
+    html += `<div class="expense-row">
+      <div class="expense-icon">${icon(cat.icon)}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="expense-note">${esc(e.note || cat.label)}</div>
+        <div class="expense-meta">${e.date} · ${esc(e.payer)} 付款 · ${e.participants.length} 人分攤</div>
+      </div>
+      <div class="expense-amount">${fmt(e.amount)}</div>
+      ${t.status==="進行中" ? `<span class="del" onclick="deleteExpense('${e.id}')">🗑</span>` : ""}
+    </div>`;
+  });
+
+  if(t.status==="進行中"){
+    html += `<div style="margin-top:26px;">`;
+    if(!f.confirmEnd){
+      html += `<button class="btn danger full" onclick="setForm({confirmEnd:true})">🏁 結束旅程</button>`;
+    } else {
+      html += `<div class="confirm-box"><div style="font-size:13.5px;margin-bottom:10px;">確定結束「${esc(t.name)}」?結束後將無法新增支出,除非重新開啟。</div>
+        <div style="display:flex;gap:8px;"><button class="btn primary" onclick="endTrip()">確定結束</button>
+        <button class="btn ghost" onclick="setForm({confirmEnd:false})">取消</button></div></div>`;
+    }
+    html += `</div>`;
+  }
+  return html;
+}
+
+function renderAddExpense(){
+  const f = state.form;
+  const members = state.tripData.members;
+  const total = parseFloat(f.amount) || 0;
+  const equalShare = f.participants.length ? total/f.participants.length : 0;
+  const customSum = f.participants.reduce((s,p)=>s+(parseFloat(f.customAmounts[p])||0),0);
+  const customValid = Math.abs(customSum-total) < 0.05;
+  const canSave = total>0 && f.participants.length>0 && (f.splitMethod==="equal" || customValid);
+
+  let html = header("新增支出", { onBack:"setState({view:'trip'})" });
+  html += `<div class="field"><div class="field-label">金額</div>
+    <input id="amountInput" type="text" inputmode="decimal" class="mono" style="font-size:20px;" value="${esc(f.amount)}" placeholder="0" oninput="setForm({amount:sanitizeAmount(this.value)})"></div>`;
+  html += `<div class="field"><div class="field-label">類別</div><div class="chips">
+    ${CATEGORIES.map(c=>chip(c.label,{selected:f.category===c.key, onClick:`setForm({category:'${c.key}'})`})).join("")}</div></div>`;
+  html += `<div class="field"><div class="field-label">備註</div>
+    <input id="noteInput" value="${esc(f.note)}" placeholder="例如:燒肉"
+      oninput="setFormSilent({note:this.value})"></div>`;
+  html += `<div class="field"><div class="field-label">日期</div>
+    <input id="dateInput" type="date" value="${esc(f.date)}" oninput="setForm({date:this.value})"></div>`;
+  html += `<div class="field"><div class="field-label">付款人</div><div class="chips">
+    ${members.map(m=>chip(m,{selected:f.payer===m, onClick:`setForm({payer:'${esc(m)}'})`})).join("")}</div></div>`;
+  html += `<div class="field"><div class="field-label">分帳方式</div><div class="chips" style="margin-bottom:12px;">
+    ${chip("平均分攤",{selected:f.splitMethod==="equal", onClick:"setForm({splitMethod:'equal'})"})}
+    ${chip("自訂金額",{selected:f.splitMethod==="custom", onClick:"setForm({splitMethod:'custom'})"})}</div></div>`;
+
+  html += `<div class="field"><div class="field-label">分攤人(可與旅伴清單不同)</div><div class="chips" style="margin-bottom:${f.splitMethod==='custom'?14:0}px;">
+    ${members.map(m=>chip(m,{selected:f.participants.includes(m), onClick:`toggleParticipant('${esc(m)}')`})).join("")}</div>`;
+
+  if(f.splitMethod==="equal" && f.participants.length>0 && total>0){
+    html += `<div style="font-size:13px;opacity:.6;margin-top:10px;">每人 NT$ ${fmt(equalShare)}</div>`;
+  }
+  if(f.splitMethod==="custom"){
+    f.participants.forEach((p,pi) => {
+      html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:56px;font-size:13.5px;">${esc(p)}</div>
+        <input id="customAmount_${pi}" type="text" inputmode="decimal" class="mono" value="${esc(f.customAmounts[p]||'')}" placeholder="0"
+          oninput="setCustomAmount('${esc(p)}', sanitizeAmount(this.value))"></div>`;
+    });
+    html += `<div style="font-size:13px;margin-top:6px;color:${customValid?'var(--good)':'var(--stamp)'}">
+      已分配 NT$ ${fmt(customSum)} / 總額 NT$ ${fmt(total)}${!customValid && total>0 ? "・金額需等於總額":""}</div>`;
+  }
+  html += `</div>`;
+  html += `<button class="btn primary full" ${!canSave?"disabled":""} onclick="saveExpense()">儲存支出</button>`;
+  return html;
+}
+function toggleParticipant(name){
+  const p = state.form.participants;
+  setForm({ participants: p.includes(name) ? p.filter(x=>x!==name) : [...p, name] });
+}
+function setCustomAmount(name, val){
+  setForm({ customAmounts: {...state.form.customAmounts, [name]: val} });
+}
+
+function renderBarSection(title, members, values){
+  const max = Math.max(1, ...members.map(m=>values[m]||0));
+  let html = `<div class="section-label">${title}</div>`;
+  members.forEach((m,i) => {
+    const v = values[m]||0;
+    const pct = Math.max(2, v/max*100);
+    html += `<div class="bar-row"><div class="bar-name">${esc(m)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${personColor(i)};"></div></div>
+      <div class="bar-value">NT$ ${fmt(v)}</div></div>`;
+  });
+  return html;
+}
+
+function renderSettle(){
+  const t = state.trips.find(x=>x.id===state.tripId);
+  const data = state.tripData;
+  if(!t || !data) return renderLoading("讀取中…");
+  const paid = {}, owed = {};
+  data.members.forEach(m => { paid[m]=0; owed[m]=0; });
+  data.expenses.forEach(e => {
+    paid[e.payer] = (paid[e.payer]||0) + e.amount;
+    e.participants.forEach(p => { owed[p.name] = (owed[p.name]||0) + p.amount; });
+  });
+  const net = {};
+  data.members.forEach(m => { net[m] = (paid[m]||0) - (owed[m]||0); });
+  const txns = simplifyDebts(net);
+  const grand = data.expenses.reduce((s,e)=>s+e.amount,0);
+
+  let html = header("分帳結算", { onBack:"setState({view:'trip'})" });
+  html += `<div style="font-size:13.5px;opacity:.6;margin-bottom:4px;">${esc(t.name)}</div>`;
+  html += `<div class="total-row" style="margin-bottom:22px;"><span style="opacity:.6;font-size:14px;">旅程總花費</span><span class="total-num" style="font-size:22px;">NT$ ${fmt(grand)}</span></div>`;
+
+  html += renderBarSection("每人實際花費(依分攤計算)", data.members, owed);
+  html += `<div style="height:8px;"></div>`;
+  html += renderBarSection("每人實際付款", data.members, paid);
+
+  html += `<div class="section-label" style="margin-top:22px;">每人淨額</div>`;
+  data.members.forEach((m,i) => {
+    const n = net[m]; const positive = n>=0;
+    html += `<div class="net-row"><div style="display:flex;align-items:flex-start;gap:8px;">
+      <span class="dot" style="background:${personColor(i)};margin-top:6px;"></span>
+      <div><div class="net-name">${esc(m)}</div><div class="net-meta">付款 ${fmt(paid[m]||0)} · 應負擔 ${fmt(owed[m]||0)}</div></div></div>
+      <div class="net-val" style="color:${positive?'var(--good)':'var(--stamp)'}">${positive?'+':''}${fmt(n)}</div></div>`;
+  });
+
+  html += `<div class="section-label" style="margin-top:24px;">轉帳建議</div>`;
+  if(txns.length===0) html += `<div style="font-size:13.5px;opacity:.5;padding:8px 0;">目前所有人帳務已平衡。</div>`;
+  txns.forEach(tx => {
+    html += `<div class="txn-card"><span style="font-weight:500;">${esc(tx.from)}</span><span style="opacity:.5;font-size:12.5px;">轉給</span>
+      <span style="font-weight:500;">${esc(tx.to)}</span>
+      <span class="mono" style="margin-left:auto;font-size:15px;font-weight:500;color:var(--stamp);">NT$ ${fmt(tx.amount)}</span></div>`;
+  });
+  return html;
+}
+
+function render(){
+  const active = document.activeElement;
+  const activeId = (active && active.id) ? active.id : null;
+  const selStart = (active && typeof active.selectionStart === "number") ? active.selectionStart : null;
+  const selEnd = (active && typeof active.selectionEnd === "number") ? active.selectionEnd : null;
+
+  let html = "";
+  if(state.view==="setupNeeded") html = renderSetupNeeded();
+  else if(state.view==="loading") html = renderLoading();
+  else if(state.view==="spaceGate") html = renderSpaceGate();
+  else if(state.view==="home") html = renderHome();
+  else if(state.view==="newTrip") html = renderNewTrip();
+  else if(state.view==="trip") html = renderTrip();
+  else if(state.view==="addExpense") html = renderAddExpense();
+  else if(state.view==="settle") html = renderSettle();
+  document.getElementById("app").innerHTML = html;
+
+  if(activeId){
+    const el = document.getElementById(activeId);
+    if(el){
+      el.focus();
+      if(selStart!==null && typeof el.setSelectionRange === "function"){
+        try{ el.setSelectionRange(selStart, selEnd); }catch(e){}
+      }
+    }
+  }
+}
+
+/* 讓內嵌的 onclick / oninput 能呼叫到這些函式(module 的頂層變數不會自動掛到 window 上) */
+Object.assign(window, {
+  setState, setForm, setFormSilent, sanitizeAmount,
+  joinSpace, switchSpace,
+  openTrip, backHome, createTrip, endTrip, reopenTrip,
+  addMember, deleteExpense, openAddExpense, saveExpense,
+  toggleParticipant, setCustomAmount, addTripMember, removeTripMember,
+});
+
+render();
+boot();
+</script>
+</body>
+</html>
