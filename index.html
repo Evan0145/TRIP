@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>旅行分帳(連動版)</title>
+<link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAtUExURfz7+u3l1takkufVxOPKudeqmMyHc7VFMbtVQsNsWMh9ao6KdmdaRJtKNrJ1Y9jHirUAAAAJcEhZcwAAD2AAAA9gAXp4RY0AAAAHdElNRQfqCRAJJitGseZBAAAA10lEQVQ4y71T0RKDIAyzpYUWt/3/566CQN0U97QcR1ECgRxZFgNcYKnAQAjMEPeKFGKrZT5Jqq1VN0QjBBtdQCSYPqUJCBbAGQGNANcSSewmwLMd+BeCl1BERv2QiG6ecoyZHGM7ZBifucjxWCIBnA/KYQf3PbwPQklUchaRROIk2iG1bKVlcTvGwYczwsEHXR+Gtfae0CX4aXi9tp69BM4k0F1TeRD6Pcn7wGjg2nujhm/mc0Xuv+L/38OpxO2jvXv2t8Hx0ZOvIR7CSy281MKLe75n8X8Dh64XjOtDk7YAAAAASUVORK5CYII=">
+<link rel="icon" type="image/png" sizes="192x192" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAMAAABlApw1AAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAqUExURf79/e3l1ebWxuDFtN68q9eol7RDLsyIdcNuWrxZRcd4ZNOaiJamkz9mUDpfv38AAAAJcEhZcwAAD2AAAA9gAXp4RY0AAAAHdElNRQfqCRAJJitGseZBAAAGCElEQVR42u2d2ZKsIAyGlVV0zvu/7hllkygoQovpMTdTf02X5HOBBCN0XdL6B1h31Vo7XgbR2uNChtbOFiK0drQQobWThQitHSxEIJQxRtxvCWOB7hdNz2u6p9l5DR2YNSVx/7mYTbrfQ80WPfj2gCaLVt6BRQuv1aK9Q8OiKdCeQC6aQx0FGIFDEjgkgUOTCB3iQGtg75AG9A4ZPQFgf8YU0BpwjPlv2nMNWG0boCJswLQvRqt1e/4MGK3C9oWyhKMIic0JcpdkAtqcIMHS/lsCpkRAQKEeREBEvF48ItY/MWpt/RMDCfwVAw38FQpqFvi/T8Bdc/MRJzYBzWVCq4mHWoZazFqFego1m4aEHiegN88BEcgM9kW0/JD3GgXjFys/5L3G+giAGh5tah/Ad5m/z+ejbfAAfQBA5GABWt8cKbMAw9xTwwiO4wEwQy0MQTkWABsqbELoAQeAD9YgwIQDYAIAPtplOABWCQMAQHcFIMCIA2AMAcI7CAMAuIe8/woLgKJbAGLjdwwAc75AAMAqFmrt5BkAdxu5OwgrQP8CvACVAIidNMABoCQBAG4aBgXAOpjoAQEGAN7vA+DLByAAvmgUAODLBwAAxwHAowASB4CMASzzowgAVq90AgCKMR/wAAxXPsAgAPpY6AV4Af46gHtnigRgoACgt69tUQCsxmKU+cA6HH3zgQYAbz6QtmHiLGI8qHe4DPDRfECuQ90do7Lo8B/PB3h/aLzk+Ml8QNf7FAFMx/6vyoAuAwxkB4Ca45YAqDP+u0Ku6wC/fykEqBILnboARZfgw8GcvrJ0jJWajPq8FRRXfRjg2D2N+FSAwfdlMdOX4PpocAdAsvaLfQygRj5wJ8BOPmDKPFEAjH4gWI/EEgvAOpYIYiGFAyAYL2vmA3cBxPOBwnD6LgBeG8CWmkrTnyVM9x0SFoHWAriSD8ggP8o1lpkepPOBJQjIA1j1ZxeNjDnt6V5o3WhZPiCz/d2xnIuQyAcI13dkDsB4xd+tZVwDM5Ap7hCKYqHi+8ecu2wAUSeYs/0xcdMOlBAazEOQ9X83v7AnIKPJqgC6fZLq1Wd/E/82N/P5S1AVwMzwJTvzAwAbFZwe2aoC6C4oPUtyBGAGpdMdUSIfsCfyPMB04v49BDhzkD0AtZMPDHgAhir5QDuAWD5A8vKBZgAqEkrkBnPNAKLBXGY43QygVj7wQADst1BmPtCuF4o9xCMWgHEXgOXmAw0HMsU2AK4ZFADCv2YqCObaAlSIRl+ABwAQQtKh/CGA/D1EFYBrD/HPvwObAY5+81PlIb7WjbYC2OlGrw1kjQD2B7IroUQjgHr5QBuAivlAm17ozQdaA8TzAexJPfJpFeQTW+inFv9oNPoCvADfA3DhNWvLaZXta9Y+/0V3O4DdF939F0wtog/mMsPpZm8pa+UDzd4TxwEyS85avamPl5xlFv1tayU2Ro7+m/cIHBT9ZZddtqpWieQD+YWvzeqFdgpfr5UeN6rYEjulxxeLv9vUzM1WrXq9QdViXQBRsETpxbrR6gA32hcDVPkM6z6A7WdYfZUP4W4CiOUD2Jcmwb84DP7ledB/EI3+k3TsiwJgX5YB98IY6JcmQR8LvQAvwF8HQLZM27RZpq1Hv1Demw/cB/DmA60B3nygNQD+fCCybDPuhbPRL12OPhZ6AV6AqwDoNxH5lm1csOYD37CVEfrNpL5pOy98+cB3bGmHf1NB9Ns64t9YE/3Wpvg3l0W/vS/+DZbRb3GNf5Nx9Nu8/5p/DHQ3y1So3ZdaZix3b2bNdLGvQdZzHr4eUdc2+u9GTb2P13Q1MSVcvO81Ww1Us7Fu11jgr+9abexBA399xa0Nb4mdWrIjvdGuVNhO6tg5HUtotSWy+coENE/733Vj2L45oAJaBMHfqn3bgNPmDLjokYQnyGofnIUnyJ4Br03dbsz/joPfQ80AIAWaAOAeABuHCHCIAu3DZRkCWx0F6JZV+PzxSVBjPhMsi/Wd13RPs/MaOkCWtQK7lPWPt+7IWjtY6P6zEU65/1yE0+4/EyHL/ccx5Hv/IIi0h/8B00vUAh1h4IsAAAAASUVORK5CYII=">
+<link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAMAAAAKE/YAAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAwUExURf79/O3m1rVDLuHHtufXxtirmb1aRsRxXc+Qfch6Z7O8qa2FcplLNj9mUHePe2VbRQTSOVIAAAAJcEhZcwAAD2AAAA9gAXp4RY0AAAAHdElNRQfqCRAJJitGseZBAAAE/0lEQVR42u2d65qjIAyGqwTBzm7n/u92azkItiBHTbrmzzx5pPjCIHxogNstYsOJdiuxM4HLwM+mLeA+G7QA+2zIAuyzAUuwz6bLpx7GxZhJCC+X2x9OUVcsrvTd2bpycYV1+eJOvjtuXDAuU1cD0NynVIml71oOVaSV45O7cohPrsWa/dqSvquxAhWtsprAy9lmrXK2eUnfVTnbEsddVX5bH9o19aGqw1YATNr9yKwxzI/1jUYBMXfauMzFMGVik+eCcVUhQMRcU1nPIr4jc5P2eWfOIOyOizv7rvRc5rjy6XLH5Z47+65Y3CnsbrFHEvYF0MPZOGnmtY/BQk8Codl27Y0yK7TgEp2tvYALvfRK+jEVMvE/daBJPYBw7g7oqn+ccUPP4KkQV02ghbZKZQPNMUNzH9rKGIYZ2uqnwYcGzNAQgKbRPAZ/siIwQ69SfdhWNF5ov6p1e2aqB8cLPQoGG2iTADH0aOZrtnVQgh4u6As6AdrMTTFDS76BNlN3vNDCGcjXgQZwS9OV2YWmoj18aCLS1IcmIk2/oHlQkaYuNBlpukIz9SIUL/Q4sy20efOEGHp9jUBae1zQF3RMms74oed3acqwS1PnxZgvPRBDX9L0IOiO0jT0qaceupc0lW5tbIzV5BtrHnMVtIAhalBc3S/o+TN0nTQVw66VUoelKSjaYmi2D80Ks9aDi4QtdK00Tajo4qruJk25ftzmj6YfUV6WdzfBxEyfGTCoaB/doGGnJvlOoU6B3vv3c+8ujaDNl37M0OKDNJ1wQ0/tpWl/6A7StDt0D2naHbqHNO0O3U6aSs60qVKzoKl7Gs8NRkyEDjUPmQnt5pNtGUP6C1o6vy2XplOCrosZm1LvFJamuujp0FAA6lnyoK4HFycMQf81I2UydFXbyGshdhg3+rdUe9joZvukPW3z5Pm+c30ToZ0MXSuY+F675ADhmpyy9HUz6FdlQeRZikLrT5mJrboZ9G5NxaGzBpsgtMyTpmq2Fku7A6263bReb2V77/JypOkJ0NN7lzfoGRxeaGcsK9Qex0M3kKbHQzeQpsdDA8WabiBNj4cOSFOKvUeWND1jcKmWpqeMiLXS9BzoSsF0QR8IDff7z5+wLdCRyz/3O1RD5z+I979RuwPspah+EPO7vMOhW0jTo6ED0jRvGD8YOjCMZ+rp++PxG7EFOnb98ciDDgmmS5oeNQmgON0iKU3pvUIg+bLGJMAM/b+qvAu6DJrkHJHkbHzI+ySHZXCh+YYpX3tUf744VpqOq1opg2Zen5UA3UCajrvf1OLQfLfQW+gG0tQ0MRbc/oQBRC6uD1EqdKB55IUDVX8aT/84HgkHygy8mgsoN5Ya9BEMvMoPcav+op8c8REMcTMJMoJU5qoWAunBNW0jIGVxnEpW4HrzsM2izaaSY2o6QR9hQWiS6xGrw+v7Q7+H1w8k19gOtUtGOkMHlozQXLtFcoU+yQVnFJsHxUWUBJerklwYbBJghv4OwXRBX9ARaJKbkpCVphQ32iGpPS5p2hz6q6Qpwa3nCG7yR3I7RZMAM/R3aI8Lujs0yQ2GKW/lTEmaUt2enORG8MS33CciTekeI0HzwA6SR6OQOYSGudAkj/uhebASySOsaB4WRhO65QF4rrs58a7tAXgkjxq80TzUkebxmTQPKr1RPBIWL/Vtz84GLEDGh52EjAs7GRkNdx4xAvAY1z/PixbHXwCdqAAAAABJRU5ErkJggg==">
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoi5peF6KGM5YiG5bizIiwic2hvcnRfbmFtZSI6IuWIhuW4syIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjRURFNkQ2IiwidGhlbWVfY29sb3IiOiIjQjU0MzJFIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBTUFBQUFEQUNBTUFBQUJsQXB3MUFBQUFJR05JVWswQUFIb21BQUNBaEFBQStnQUFBSURvQUFCMU1BQUE2bUFBQURxWUFBQVhjSnk2VVR3QUFBQXFVRXhVUmY3OS9lM2wxZWJXeHVERnRONjhxOWVvbDdSRExzeUlkY051V3J4WlJjZDRaTk9haUphbWt6OW1VRHBmdjM4QUFBQUpjRWhaY3dBQUQyQUFBQTlnQVhwNFJZMEFBQUFIZEVsTlJRZnFDUkFKSml0R3NlWkJBQUFHQ0VsRVFWUjQydTJkMlpLc0lBeUdsVlYwenZ1LzdobGxreWdvUW92cE1UZFRmMDJYNUhPQkJDTjBYZEw2QjFoMzFWbzdYZ2JSMnVOQ2h0Yk9GaUswZHJRUW9iV1RoUWl0SFN4RUlKUXhSdHh2Q1dPQjdoZE56MnU2cDlsNURSMllOU1Z4LzdtWVRicmZRODBXUGZqMmdDYUxWdDZCUlF1djFhSzlROE9pS2RDZVFDNmFReDBGR0lGREVqZ2tnVU9UQ0IzaVFHdGc3NUFHOUE0WlBRRmdmOFlVMEJwd2pQbHYybk1OV0cwYm9DSnN3TFF2UnF0MWUvNE1HSzNDOW9XeWhLTUlpYzBKY3Bka0F0cWNJTUhTL2xzQ3BrUkFRS0VlUkVCRXZGNDhJdFkvTVdwdC9STURDZndWQXczOEZRcHFGdmkvVDhCZGMvTVJKellCeldWQ3E0bUhXb1phekZxRmVnbzFtNGFFSGllZ044OEJFY2dNOWtXMC9KRDNHZ1hqRnlzLzVMM0crZ2lBR2g1dGFoL0FkNW0veitlamJmQUFmUUJBNUdBQld0OGNLYk1Bdzl4VHd3aU80d0V3UXkwTVFUa1dBQnNxYkVMb0FRZUFEOVlnd0lRRFlBSUFQdHBsT0FCV0NRTUFRSGNGSU1DSUEyQU1BY0k3Q0FNQXVJZTgvd29MZ0tKYkFHTGpkd3dBYzc1QUFNQXFGbXJ0NUJrQWR4dTVPd2dyUVA4Q3ZBQ1ZBSWlkTk1BQm9DUUJBRzRhQmdYQU9wam9BUUVHQU43dkErRExCeUFBdm1nVUFPRExCd0FBeHdIQW93QVNCNENNQVN6em93Z0FWcTkwQWdDS01SL3dBQXhYUHNBZ0FQcFk2QVY0QWY0NmdIdG5pZ1Jnb0FDZ3Q2OXRVUUNzeG1LVStjQTZISDN6Z1FZQWJ6NlF0bUhpTEdJOHFIZTREUERSZkVDdVE5MGRvN0xvOEIvUEIzaC9hTHprK01sOFFOZjdGQUZNeC82dnlvQXVBd3hrQjRDYTQ1WUFxRFArdTBLdTZ3Qy9meWtFcUJJTG5ib0FSWmZndzhHY3ZySjBqSldhalBxOEZSUlhmUmpnMkQyTitGU0F3ZmRsTWRPWDRQcG9jQWRBc3ZhTGZReWdSajV3SjhCT1BtREtQRkVBakg0Z1dJL0VFZ3ZBT3BZSVlpR0ZBeUFZTDJ2bUEzY0J4UE9Cd25ENkxnQmVHOENXbWtyVG55Vk05eDBTRm9IV0FyaVNEOGdnUDhvMWxwa2VwUE9CSlFqSUExajFaeGVOakRudDZWNW8zV2haUGlDei9kMnhuSXVReUFjSTEzZGtEc0I0eGQrdFpWd0RNNUFwN2hDS1lxSGkrOGVjdTJ3QVVTZVlzLzB4Y2RNT2xCQWF6RU9ROVg4M3Y3QW5JS1BKcWdDNmZaTHExV2QvRS84Mk4vUDVTMUFWd016d0pUdnpBd0FiRlp3ZTJhb0M2QzRvUFV0eUJHQUdwZE1kVVNJZnNDZnlQTUIwNHY0OUJEaHprRDBBdFpNUERIZ0FoaXI1UUR1QVdENUE4dktCWmdBcUVrcmtCblBOQUtMQlhHWTQzUXlnVmo3d1FBRHN0MUJtUHRDdUY0bzl4Q01XZ0hFWGdPWG1BdzBITXNVMkFLNFpGQURDdjJZcUNPYmFBbFNJUmwrQUJ3QVFRdEtoL0NHQS9EMUVGWUJyRC9IUHZ3T2JBWTUrODFQbEliN1dqYllDMk9sR3J3MWtqUUQyQjdJcm9VUWpnSHI1UUJ1QWl2bEFtMTdvelFkYUE4VHpBZXhKUGZKcEZlUVRXK2luRnY5b05Qb0N2QURmQTNEaE5XdkxhWlh0YTlZKy8wVjNPNERkRjkzOUYwd3RvZy9tTXNQcFptOHBhK1VEemQ0VHh3RXlTODVhdmFtUGw1eGxGdjF0YXlVMlJvNyttL2NJSEJUOVpaZGR0cXBXaWVRRCtZV3Z6ZXFGZGdwZnI1VWVONnJZRWp1bHh4ZUx2OXZVek0xV3JYcTlRZFZpWFFCUnNFVHB4YnJSNmdBMzJoY0RWUGtNNno2QTdXZFlmWlVQNFc0Q2lPVUQySmNtd2I4NERQN2xlZEIvRUkzK2szVHNpd0pnWDVZQjk4SVk2SmNtUVI4THZRQXZ3RjhIUUxaTTI3UlpwcTFIdjFEZW13L2NCL0RtQTYwQjNueWdOUUQrZkNDeWJEUHVoYlBSTDEyT1BoWjZBVjZBcXdEb054SDVsbTFjc09ZRDM3Q1ZFZnJOcEw1cE95OTgrY0IzYkdtSGYxTkI5TnM2NHQ5WUUvM1dwdmczbDBXL3ZTLytEWmJSYjNHTmY1Tng5TnU4LzVwL0RIUTN5MVNvM1pkYVppeDNiMmJOZExHdlFkWnpIcjRlVWRjMit1OUdUYjJQMTNRMU1TVmN2TzgxV3cxVXM3RnUxMWpncis5YWJleEJBMzk5eGEwTmI0bWRXcklqdmRHdVZOaE82dGc1SFV0b3RTV3krY29FTkUvNzMzVmoyTDQ1b0FKYUJNSGZxbjNiZ05QbURMam9rWVFueUdvZm5JVW55SjRCcjAzZGJzei9qb1BmUTgwQUlBV2FBT0FlQUJ1SENIQ0lBdTNEWlJrQ1d4MEY2SlpWK1B6eFNWQmpQaE1zaS9XZDEzUlBzL01hT2tDV3RRSzdsUFdQdCs3SVdqdFk2UDZ6RVU2NS8xeUUwKzQvRXlITC9jY3g1SHYvSUlpMGgvOEIwMHZVQWgxaDRJc0FBQUFBU1VWT1JLNUNZSUk9Iiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3BuZyJ9LHsic3JjIjoiZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUFnQUFBQUlBQ0FNQUFBRERwaVRJQUFBQUlHTklVazBBQUhvbUFBQ0FoQUFBK2dBQUFJRG9BQUIxTUFBQTZtQUFBRHFZQUFBWGNKeTZVVHdBQUFBa1VFeFVSZjcrL3UzbDFiVkRMdUxJdDd4WlJjUndYTnF3bnRPYmljMkpkdWZXeFQ5bVVOdlp5SGVJU2JBQUFBQUpjRWhaY3dBQUQyQUFBQTlnQVhwNFJZMEFBQUFIZEVsTlJRZnFDUkFKSml0R3NlWkJBQUFVMkVsRVFWUjQydTJkNjdxaklCSkZUYnlBTSsvL3Z0T2V2a3dDVlVXaG9BWHM5YmZySStwZTVwaEVkMDlURlY2Z09IV1NRdkt0OFhUQ3lONENUMmVOOEEzd2RPWkkvM21lVGg3cFB3L1NCNGgvZUJELzhDRCs0VUg2QVBFUEQvSWZIY1EvUEloL2VKRC82Q0QrNFVIK280UDRod2Y1ajA2eDhOL2ZDQzg1ZjA4dSt0RlZHTjMwbys1NzFBdWovdlNvRTBiWDc5Rk5Qem9MbzR0K05BaXJ5TWwvV2dCcE5FaFZjaVZJVlJMQTYwZlgwNk5lUHlxNUVxUXF1UkljMWd3QlNyd043UHFYMzhLWFY2Y3FqUWFwU3E2Y1Q3WFFhSkNxNUVwd0FKeCtWSEFsUEFYM0FnSTQvY3Q3L1dod1VDV3RsbkNuOUtQNmc1b3hLaGk0NjBmRHFBU3R3dlBLNjBkZGdiOEFpMzVMMy9vdERVZjVFMkRYajRZSFZUQnd1ekRLeXhxZUxJS3MwU2gvckx4K05EeXZsc3QvQStLRHl1OVVQS28vcVB5NUVoMHAza0N2SDEwdmpIcjlLQzlyZUY0SkJrYUhsVFZ3SjBZdjVoL3ZFNy8vOFNpNy85SHU4L3YvVm8vR3U4OGVxdm5TS0hjS2JQSG9TejNLbmdMUkdjREw2cW5SYS9rVHU4OGRLbUwzdVVNVjd4TzcveG1qOGU2emgycTlOTXFkQXJIVzdDbWdIeVcwNWs0Qkpxd3IrZS9FaGpJQlVCdktITlZaUDBwWnhRUkFqdEpIMVYwY3BRUHcrdEdWR3AzMW8vU0pSWWExbnplQWUzVTZxNFVjcGJMYTZWRXFBRklWK3FobWpHNlhSK2RybzZSVlAxbnByS0xQUVQ2czArYy92U1JsQUJNcVpjQ2NNY3BNRXJKczNPaDIwNmpqUm1NRFBETzVaSXpHc3JCaG5Yd1BFSktLTjVVOVVMOWZ2L3hvS0l2VGovb2lvKzcwS0h0YXZTT3ZNa1lUWVozSWZ4WmUvRGhXSDJHVkcvMDhWdHRTYUhUNVBGYmJ1OGFvS3pXNmZweFp1eTg0bXBuKzd1U2ovN09xbTM5dHdyeDUxZWorMm91UGJuOUdrNVAvUnRlaW8xNDl1dndaZGNWSGZ5V2dHblY3aGdQcFhRY3RBZ0VHQndJTURnUVlIUFVsNE5NYkN1cWd2QXg4UVlCT1VYNGRBQUY2UlNmQUN3TDB5a3Rqd0FzQ2RNdExZd0FFNkJlTkFDOUpBQWVhUUJMZ3BjZ2ZBalNPS01BTEFuVFBlUUZlRUtBSFpBRmUxd1M0Y2hFQzZuTkpnSS83TnNqZnVDR0FmWmlNMXUzajlwRjAvc3hOSmhEQVBtUkdQcmpYVGlVQWNac1pCTEFQa1ZGOHI2a3UvMWY4dERNRU1FK2NFWFVUdjFhQXdBQUlZSjhvSS9JaERyVUEzNDk3UUFEN2hCblJqM0dwOC85K05BTUMyQ2ZNaUhtUVV5M0Exd01QRU1BK1FVYmNjNnpxL0wrZStZUUE5Z2t5WXNzYzFBSjhYZ2RDQVB0OFo4VFhYcWp6LzN5VUNRTFk1enNqb1hwS0xjRE1MUTRzOHAzUnJCWGdCUUU2NFRzam9WSHRwUlhneFMwT0xQS2QwUXNDak1ZNUFhUTUvQWxvQ3ZVMXdKY0IwdGpHTFE0czhwM1JWa0FBenkwT0xQS2RrZGNKSUUxOS9od0VBZXp6bmRIeVVobWd2QVNBQUEwUVpLUzdDSkNHVm41eFlKQWdvMVVqZ0RTekNZc0RnNFFaYVM0RGhZbGRYQnpZSThwSThXV2dNTEhJaXdOelJCa3RGd1FJKzE4aGdIM2lqSlk5SVlEdTd6KzlPTEFHbGRFbUc4RDhHMUhxQ2dIc1EyYTB6bmtDY1BXckVNQStYRVorbTJlMUFMbUxBenNvSGc2RkFEMlRMOEFMQXZSRW5nQXZDTkFiRUdCd0lNRGdRSURCZ1FDREF3RUdKMXVBRndUb2lrd0JYaENnTXlEQTRFQ0F3WUVBZzFORWdPWEU0c0FHUWthTFdvQmZrRGNFUUFEN01CbDU3cTRnWFRXSXZEZ3dCSm1SVkJUQy8xUDhuNWREQVBzUUdhM2luZUV2Q1o5Y0hCZ2p6a2g4UURRaFFHQUFCTEJQbEpHY2YwcUE3N0pnQ0dDZk1LUDFkVTJBWFZvYzJDUE1hTDhvQUtwaUcwTlpGYXNYQUZXeGJhR3RpbFVMZ0tyWXR0Qld4ZW9GUUZWc1U2aXJZdFVDb0NhdUtUSnE0cFFDN056aXdDTDZxbGl0QUdnS2JRcDlVeWplQWJxa3ZBQzRCbWlLOHRjQXFJcHRpb3lxV0tVQXFJcHRpb3lxV0tVQXFJcHRpcHlxV0pVQXFJcHRpNXlxV0pVQXFJcHRpNXlxV0kwQXFJcHRqS3lxMkxRQXM3ZzRzRWVVMFh4RmdCMVZzYTBSVjhYdTV3V1lVUlhiSEVSVjdIeFdBSmRlSEZpRHlzaWRFbUJiVklzRFc1QVpMVnVlQVBQbVZ2WGl3QlJjUnF2YlpyVUF1WXNETytEeDhNR0JBSU1EQVFZSEFnd09CQmdjQ0RBNEVHQndJTURnUUlEQmdRQ0RBd0VHQndJTURnUVluQ0lDckV2KzRzQUdmRWJMcWhiZ0Y3TmJjaFlIVnFBeldoejd2d2UvV09KYmdpQ0FmYWlNaEJ1QzVKdENVUlhiSGxSVnJKU3hmRnU0U3k0T2pCRm5KUGNFb1NxMk02S01FajFScUlydERGVEZEazd4cWxnbkxBN3NFV1NVTEFwTUYwVHdpd09EQkJrbDQwVlZiR2VnS25ad3lwZEVvU2F1S1ZBVk96aW9paDBjVk1VT1R2bDNnSGF2QVJhL3pla2prUEovM3Z4eWZWdHVBMVd4Zi9EYjVldy9MQ0QvSjEyVG9DcjJZRW4vVHhuWnVEYmVCMUFWSzkvL2NJV3RCUVdLVjhWdTdPSldTVnQvbWdiK0VBUVpKYytGcEFBTHY3aE5LcDMrOGVsZ2t5Q2o1RnRBU2dBbkxHNlM5SFh2SmViclcxaVhNS1BVMVZCdlZiRlZ6LzhENis4QlphdGk1OFRpNXFqNDkvOHZ4cThENG94a0EwUUJ0dVRpeGtoZjlCYkE5bWNCSWlQeFhiR3ZxdGpxZndDbzA4SVd4YXBpZDZkYjNCSzN2QUVZZnd1Z00zTHMxNktrQUp1anYvNjJMa0NGNy84b2JCOERKcVBGTy9MOXNhdW5nKy9Kbno4K0ZoajU4ZkFiUGdMOHh2SUhnWkVGdU9VUzhNRHlaZURJQWtRWE9ydGZyNis2K25qZHAvZFVZR0FCb3M4QXhiNjJqYjVLTWZ3NVlHQUJ3a3VBZ3VkcCtCNWcrQ0pnWUFHMmVpbUZiaG0rQ0JoWWdQQ051c0RmLzcrRUQ5Z1kvazF3WUFGMjVWNmNvZDVmbDlJTUxJQjJMNnl0WFJZSUFBRWdBQVRRN1FVRU1MRjJXU0FBQkNoUUZjdDB4VUtBaGdWWTFxeXEySjM2ejJNaFFLc0NyT3dkSVIxVnhVS0FnNkpWc1Y2eHVCMGd3QUdSa1hpZmhIeGIrSlpjM0JBUTRDRE9TTDVOSXZGZ2lFc3NiZ2tJY0ZDNkt0YUxpNXNDQWh5RUdhWHVrMHMrSENvdGJnc0ljQkJtbE1xM282cFlDSEF3Y0ZVc0JEZ1l1Q29XQWh5VXI0cHRwaVFLQWh3TVhCVUxBUTRHcm9xRkFBY0RWOFZDZ0lPQnEySWh3TUhBVmJFUTRLRDdxdGpWRlNnQXJzTStiNjdnd3dqbjZMc3ExbGN1Z1N2Qi9PeHpZK1dyWXRuRjc5KzNwN1BWOG1TdGNQRnZBczFVeFRZVC80OENWZ1RvcGlyMnR2YVBVanoxaDZEVHF0amJ5ai9LOGRBVHhJV3JZamR4OGJ0WUdyajJpNWtmdVJLSU1rcWNPeTFVeGFaLzBqTEtFNThKTzZ5S3ZhbitzUVlQdkFjVXJJcmR2V0x4RzJqeS9mODNEeFJKVUJsNTRac3pWZ0RxKzR4SEJHancrdS8vM0g4bFNHZkVmNE5HQ3VEOGFxWXF0cm5QZjkvYy9tbVFyWXBkUGZtQndQelR3VThuZUpXN2oxZHZqNGMzOWYwZnhlMEhyRE1CbnM3dk9qY2ZzTTRFYVA0TjRQYTNnTTRFSURadUwvYWIrLzZQUWd2U1QrSGZlOFQ2RW9ENENGQndBNG9MOENiZnN1NzlJTkNYQUhQVm8xbERBTUxaZTc4TjZrdUF1bWRURlFFSUEyNDlaRjBKRVAwS1ZQYlY2d2dRL3hXNDlUZWhyZ1FJRDJYaGl0NUtBa1QzWXQ5N3pIb1NZS3Q3SkdzSkVIcDc2dzhDWFFsUXNRRCtvSllBajViTGR5VkF6UUw0ZHowQkhpMlg3MG9BN1hhZDVDNEJidjBZVUVRQXY2N1ppOWNBQXVURFpyU3VYaTNBd1dhZ0toWUM1TU5VeGJLMzFRaTNoTTJyYnZGNlFJQjhxSXhXNGE0NjhhWlFwMWk4SmhBZ0h5SWo4U2RWMDFXeEVDQ2Z3bFd4eno0WUFnSHlLZnRneU1OVnNSQWduNjZxWWlGQVBxVWZEbjMwOFhBSWtFL3h4OE9mTElpQUFQbDBWUlVMQWZMcHFpb1dBdVRUVlZVc0JNaW5xNnBZQ0pCUFYxV3hFQ0NmcnFwaUlVQStYVlhGUW9COHVxcUtoUUQ1bFA4VWdPOEJyRzIzU1BudkFkakY2d01COHVtcUtoWUM1RlA4dHdCaDhlcEFnSHhLL3hxSSt3SHNiYmRJNGZzQmNFZVF3ZTBXS1h0SEVPNEp0TGpkSWtYdkNjUmR3U2EzVzZUZ1hjRjRMc0RvZG9zVWV5NEFUd2FaM1c2UklrOEc0ZGxBMDlzdFV1VFp3T3pGS3dFQjhzSGo0WG9nQUFTQUFCQUFBa0FBQ0FBQld0cHVFUWlnQndKQUFBZ0FBU0FBQklBQUVLQ2w3UmFCQUhvZ1FDc0MvS2NPLy8xSHBSZUFBQkNnVFFHcy9Sd01BUW9JMEhKVkxBUzRLa0RqVmJFUTRKb0F6VmZGUW9CTEFyUmZGUXNCcmdqUVFWVXNCTGdnUUE5VnNSRGd2QUJkVk1WQ2dOTUM5RkVWQ3dGT0M5QkhWU3dFT0MxQU10NG1LbUlnd0ZrQk9xbUtoUUJuQlVCVnJNUUFQd2VqS2xaaUFBRlFGU3N4Z0FEcGRQRU8wTFVBcUlxVkdFQUFWTVZLRENBQXFtSWxCaEFBVmJFU0F3aUFxbGlKRVFSQVZhekFDQUtnS2xaZ0JBRlFGU3N3aEFDb2l1VVpRd0JVeGJJTUlnQ3FZamxHRVFCVnNRekRDSUNxV0pxQkJIaWpLcFpnTEFIZURUOGVEZ0gwUUFBOUVBQUNRQUFJQUFFZ0FBU0FBQzF0dHdnRTBBTUJJQUFFZ0FBUUFBSkFBQWpRMG5hTFFBQTlFQUFDUUFCU0FPZlhKWGZ4R2tDQWZMaU1sdFU3dFFBSHM5Y3ZYZ3NJa0ErZGtXZnZDUkp1Q2R1OWJ2RjZRSUI4cUl5ODhKQ3dlRlBvcGxpOEpoQWdIeUlqOGJaZytiYndPYmw0VlNCQVBuRkc4aVBpZURDa2R3RXVWc1U2Y2ZIS1FJQjh3b3hjSXVEa3c2R0xzSGh0SUVBK1hWYkZRZ0E5WFZiRlFnQTk1YXRpUGJ0NGRTQkFQdDhacFI0T04xNFNGWDUvVVhyNW13UW92YnhJVjFXeDRTZlk5ZnFTbjlRU1lPV1BZSDI2cW9vTi9TMzg0clVFQ0Q5NWJkZVh6SGp4bnFwaXd5TlpPS2hhQW9SSC9kNWoxbE5WYk5SeVYvYlZLd2tRZmZWUytDOVg0dFY3cW9xTkJmYlgxL3c0T2xVRWlDKzhiejFrWFZYRkV0dGYwb0FxQXNUNTMzb04yRmRWTFBVeHR1QUcxQkNBK09xOTZMdFdlZ042cW9vbEwySjJWK3B2YW1rQmx0WHQ4Z0c4Z2VMZkJEcCs4VHQySjdrRDVybjdpSDFubER5QXBxdGkzNXJQTWRhNStZQ0ZHVjBWNE5HcTJIY0hid0czSDdDeVZiRk9YUHdPbmc3d0tuY2ZyeWlqeENsa3VpcjJJUDE3bG1udS9RaEFablNoS3RZbkY3K0I5RWRadzl6Nk13Q1hrWGdPQ1FKc2kyTHhHMGgvbTJXV2U3OERZak5haEpPSUU0RDh0UDJNQU1uYjJ1eXlYTi83RWdLODMvUTNGS3dBSy8xbzRFTUNLTDdPTXNxdHZ3S2xNbHBXOGppYWZqcjQzN1kzK1ZkZ2Z1RDg3K3p4OFAvVDRKWGcvZGQveVl3YUZxQzlUNE8zZi81VFpOU3lBSTE5Si9qZ1llcFdnSVlVZVBRZ2RTeUExSE5naC9tcE4vOTBSdTBMOEQ0KzBXNXorazYzUjlqbnJkaTlDcWZwWGdBZ0F3RUdCd0lNRGdRWUhBZ3dPQkJnY0NEQTRCUVJZSFBlUkZVc3lJZXRpdlZ1VXd0d3NEdjk0c0FPZEVicy9TRGlQWUZPdHppd0JKV1I5Q09LNmFwWWtBK1JrZmdEaXVtcVdKQlA0YXJZT2JFNHNFYVVVZUlIVk5OVnNTQ2ZycXBpUVQ1ZFZjV0NmTXBYeFM3czRzQWczeG1sSDZveFhSVUw4dW1xS2hiazAxVlZMTWlucTZwWWtFOVhWYkVnbjY2cVlrRStmVlhGZ216S1h3TTRibkZna2I2cVlrRTJuVlhGZ2x3NnE0b0Z1WlN1aXQyRnhZRkJ3b3hTbndOU0FxelM0c0FlWVVhcHE0Q0VBRjVjSE5pamJGV3NTeXdPekJGbjVNNExzQ1lYQjlZZ01scFBDbUNsS2hia1VLb3FkbmFMYm5GZ0N6cWp4YzA1QWpCTnNSQ2dBZmlNbG5hcllvRWVQQjQrT0JCZ2NDREE0RUNBd1lFQWd3TUJCZ2NDREE0RUdCd0lNRGdRWUhBZ3dPQkFnTUdCQUlOVFJBRHV2ejZCQVBiaE1qcitxeDIxQUQvRU53UkJnQVlnTXhKdUNVSlZiR2NVcllvTi8vZGJDR0NmT0tQbFFsWHN2aVFXQjlhSU1scmtaNE5RRmRzWnBhdGlOM0Z4WUk0d28xUkRRUExwNEZWWUhOZ2p5Q2haRUpBVVlPWVhCd1lKTWtwMnhLQXF0ak5RRlRzNHFJb2RIRlRGRGc2cVlnZW5mRk1vcW1LYkFsV3hnNE9xMk1GQlZlemdmR2VVckFsRVZXeHZGSytLM2RuRmdVV0NqSklYQVVrQlBMODRNRWlRVWZLclFGVEZkZ2FxWWdjSFZiR0RFMlhrcndqZ0U0c0RjOFFaK2RNQzdLaUtiUStxS25ZL0o0RFRMQTZNUVdiazhnWFl2SFp4WUFvbUk3L2xDTERrTFE0TUlXUzBxQVU0c1Rnd0FoNFBIeHdJTURnUVlIQWd3T0JrQ3pCQmdLN0lGR0NDQUowQkFRWUhBZ3dPQkJnY0NEQTRFR0J3OGdXWUlFQlA1QWt3UVlEZUtDTEFQSk8zQTBDQUJ1QXk4dHM4cXdYNGJjR3FYaHpZZ2N4b1pmL25ZRUdBb0NLT1hSeVlnc3BJYUFxV0RkaFJGZHNjUkZYc25zaGZ1akVZVmJHdEVWZkZDdkdtQmRqbHhZRTVvb3oyU3dLZ0tyWTFzcXBpSjRVQnFJcHRpNXlxMkVrakFLcGkyeUtuS2xZbEFLcGkyeUtuS25aU0dZQ3EyS2JJcUlxZGRBS2dLcllwTXFwaWxRS2dKcTRwTW1yaUpxVUIzT0xBSXZxbTBBa0M5RWg1QWZBbm9DbjBWYkdUMGdBSTBCVHFhNEJKS3dDcVlwdENYUlU3YVExQVZXeFRhS3RpSjYwQXFJcHRDMjFWN0tRMUFGV3hiYUdzaXAyMEFzekM0c0FnWVVheldnRGFnRVZhSE5nanpHaFI1MDhLc0lxTEEzdEVHYTFYQkZnVGl3Tnp4Qm10V2dFaUErWWx1VGl3QnBIUk11dnlEd1RZdldaeFlBd3lJNytyQlBnd1lONVc3ZUxBRkV4RzZ6YW44LzluUU9iaXdCQ0toME9uU3dJQSs1d1hZSUlBUFNBTE1FR0Ezcmtnd0FRQk9rQVVZSnJTQmx5NUNBRjIwZVFQQVRwR0pjQUVBYnBGbGY5aHdOTWJDdXFneXg4Q2RJdFNnQWtDZElveS8ybDZla05CSGJUNVE0Qk9nUUNEQXdFR1J5M0E5TnJka2x4dWRmTiszRG5neTQ1dXYwYjN2TkgwcnY4ZFhZdU9ldlhva2pmNitqWHF5bzY2WFgwSitNZUJXVjcxOHlhVGNxT2Zqekp0UzZIUlphcytLdDhta1RINldlcTYrNEtqZWVuL0dCRGZFL2l4UzhGdFpwdnc0dnZwVWVGWWhRODhaSXo2SXFQdTlPZ3VuQVBiNmRGRVdQbjVId2F3cngvZmFMcHpyeDgvbXNKdWF2d2s0L3hXajdKZWJUZU5zZ3JPNnRINDdrM1dLNkwvbFExclA1Zi96NjhDOUtMa3JlWjByTlNqU1l3czFKT3NqQUhidGRIdDh1aXNINldlenFNTklFdDlhUVBJeHozNHNNN2wvL01lc0doZlBXaVZsVlNoczZKSHlhUHE5YVAwODlIdTRpamR2VVJtUlQrYXRWNGNwWi81Sk1NNmZmNy91UTVRYnlnWkFQTndLbkZVdVVhN2pGRWlBTzd4NlBYU0tQZkVKUkdBdXp4S25WaE0rUmNUMXZuOER3UGkvV2U3NTFidFBsSDd6eGFhcVhlZk9sUmNROFo4YVpSNzVwbzRCVjdxVWJiVGtmai9IN2hSVDQxZXlmLzROS2plZldLVW00ejNuNiswZE1RK2FmZWZIMTB2akhyOUtOL1FFWjBDZktXZjJsWGlGRGp6K1M4d0lOeFNvWDVZZjZTaVVmNUk3ZnJSeUVEK29HNFhSdm5pblVqV1hUL0tIeXV2SHcwTlhDN25QMDNobG03NkxkMzBXeXEwR1lVRzd2cFJmakl5VUQ4cTlPL3UrdEZRVnVHOENnMzArbEYzUGY4cDNLbFovL0xDUVhYNjBVQXJxZjg0MEdxOWZUUXdVS3JxRGFQU2p3cm5WYWpWWGtDQThPVmYrcGNYUmdOWHBGUVZUenYveGV0SHp3dmc5YU5TcW9FclVxdXYvaFNNd2lvZ1FQamJvRjZBUlQ4cUhmOU5QeHE0SWtYbFQ0OUtxUVlDYlBwUktkVkZQeHFFVlNMLzMyOERvRG1LaFE4RG1xUnMvbENnTVlySER3T2Fva2IrVUtBWktzVVBBeHFoWHY1UW9BR3F4ZzhGckZNOWZoaGdtanZ5aHdKbXVTbCtPR0NTTzlPSEF1YTRQWDRvWUlsSDRvY0NWbmdzZmpoZ2dHZlRod1BQOG5UeWNPQkpuczRjRWp6STAxbkRndWQ0T21GNDhCUjFrdm9mcmlIMHg1Vld2dUlBQUFBQVNVVk9SSzVDWUlJPSIsInNpemVzIjoiNTEyeDUxMiIsInR5cGUiOiJpbWFnZS9wbmcifV19">
+<meta name="theme-color" content="#B5432E">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
@@ -77,6 +82,11 @@ table.cat-table td{padding:5px 0;font-size:13px;}
 .link{color:var(--brass);cursor:pointer;font-size:13px;font-weight:500;}
 .badge{font-size:11.5px;background:var(--paper-dark);color:var(--ink);opacity:.7;border-radius:20px;padding:3px 10px;cursor:pointer;}
 .spinner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:12px;opacity:.6;font-size:14px;}
+.mode-switch{display:flex;background:var(--paper-dark);border-radius:12px;padding:4px;gap:4px;margin-bottom:20px;}
+.mode-btn{flex:1;text-align:center;padding:9px 4px;border-radius:9px;font-size:13.5px;font-weight:500;cursor:pointer;user-select:none;color:var(--ink);opacity:.6;transition:background .15s,opacity .15s;}
+.mode-btn.active{background:#fff;opacity:1;box-shadow:0 1px 3px rgba(28,58,61,.15);}
+.mode-btn.active.personal{color:var(--good);}
+.mode-btn.active.split{color:var(--stamp);}
 </style>
 </head>
 <body>
@@ -162,6 +172,8 @@ let unsubTripData = null;
 function getSavedSpaceCode(){ return localStorage.getItem("triptally:spaceCode"); }
 function rememberSpaceCode(code){ localStorage.setItem("triptally:spaceCode", code); }
 function forgetSpaceCode(){ localStorage.removeItem("triptally:spaceCode"); }
+function getSavedMode(){ return localStorage.getItem("triptally:mode") || "split"; }
+function rememberMode(mode){ localStorage.setItem("triptally:mode", mode); }
 
 function subscribeTrips(code){
   if(unsubTrips) unsubTrips();
@@ -198,13 +210,32 @@ async function saveTripDataRemote(tripId, data){
   catch(e){ setState({ error: "儲存失敗:" + e.message }); }
 }
 
+let unsubPersonal = null;
+
+function subscribePersonal(code){
+  if(unsubPersonal) unsubPersonal();
+  unsubPersonal = onSnapshot(doc(db, "spaces", code, "personalData", "ledger"), (snap) => {
+    state.personalData = snap.exists() ? snap.data() : { expenses:[] };
+    render();
+  }, (err) => {
+    state.error = "連線失敗,請檢查網路或 Firebase 設定(" + err.message + ")";
+    render();
+  });
+}
+
+async function savePersonalRemote(data){
+  try{ await setDoc(doc(db, "spaces", state.spaceCode, "personalData", "ledger"), data); }
+  catch(e){ setState({ error: "儲存失敗:" + e.message }); }
+}
+
 /* ============================================================
    App 狀態
    ============================================================ */
 let state = {
   view: firebaseReady ? "loading" : "setupNeeded",
   spaceCode: null,
-  trips: [], tripId:null, tripData:null, loading:true, error:"",
+  mode: getSavedMode(),
+  trips: [], tripId:null, tripData:null, personalData:null, loading:true, error:"",
   form:{ spaceInput:"", newTripName:"", newTripMembers:[], newTripDraft:"", addingMember:false, memberDraft:"", confirmEnd:false,
     amount:"", category:"FOOD", note:"", date:new Date().toISOString().slice(0,10), payer:null, participants:[], splitMethod:"equal", customAmounts:{} } };
 
@@ -227,13 +258,42 @@ function joinSpace(codeRaw){
   state.loading = true;
   state.view = "home";
   subscribeTrips(code);
+  subscribePersonal(code);
   render();
 }
 function switchSpace(){
   if(unsubTrips){ unsubTrips(); unsubTrips=null; }
   if(unsubTripData){ unsubTripData(); unsubTripData=null; }
+  if(unsubPersonal){ unsubPersonal(); unsubPersonal=null; }
   forgetSpaceCode();
-  setState({ view:"spaceGate", spaceCode:null, trips:[], tripId:null, tripData:null, form:{...state.form, spaceInput:""} });
+  setState({ view:"spaceGate", spaceCode:null, trips:[], tripId:null, tripData:null, personalData:null, form:{...state.form, spaceInput:""} });
+}
+
+function setMode(mode){
+  rememberMode(mode);
+  setState({ mode, view:"home" });
+}
+
+function openPersonalAdd(){
+  setState({ view:"personalAdd", form:{...state.form, amount:"", category:"FOOD", note:"", date:new Date().toISOString().slice(0,10)} });
+}
+
+function savePersonalExpense(){
+  const f = state.form;
+  const total = parseFloat(f.amount) || 0;
+  if(!total) return;
+  const expense = { id:uid("P"), date:f.date, amount:total, category:f.category, note:f.note.trim() };
+  const data = state.personalData || { expenses:[] };
+  const personalData = { expenses:[...data.expenses, expense] };
+  savePersonalRemote(personalData);
+  setState({ personalData, view:"home" });
+}
+
+function deletePersonalExpense(expenseId){
+  const data = state.personalData || { expenses:[] };
+  const personalData = { expenses: data.expenses.filter(e=>e.id!==expenseId) };
+  savePersonalRemote(personalData);
+  setState({ personalData });
 }
 
 function openTrip(id){
@@ -351,10 +411,20 @@ function renderSpaceGate(){
   return html;
 }
 
+function renderModeSwitch(){
+  return `<div class="mode-switch">
+    <div class="mode-btn split ${state.mode==='split'?'active':''}" onclick="setMode('split')">🧭 旅遊分帳</div>
+    <div class="mode-btn personal ${state.mode==='personal'?'active':''}" onclick="setMode('personal')">🗒 個人記帳</div>
+  </div>`;
+}
+
 function renderHome(){
+  if(state.mode==="personal") return renderPersonalHome();
+
   const active = state.trips.filter(t=>t.status==="進行中").sort((a,b)=>b.createdAt-a.createdAt);
   const ended = state.trips.filter(t=>t.status==="已結束").sort((a,b)=>b.createdAt-a.createdAt);
   let html = header("旅行分帳", { right:`<span class="badge" onclick="switchSpace()">代碼:${esc(state.spaceCode)} ⇄</span>` });
+  html += renderModeSwitch();
 
   if(state.loading) return html + renderLoading("讀取旅程中…");
 
@@ -425,6 +495,56 @@ function renderCategoryBreakdown(expenses){
       <div class="pie" style="background:conic-gradient(${stops});"></div>
       <table class="cat-table"><tbody>${rowsHtml}</tbody></table>
     </div>`;
+}
+
+function renderPersonalHome(){
+  let html = header("個人記帳", { right:`<span class="badge" onclick="switchSpace()">代碼:${esc(state.spaceCode)} ⇄</span>` });
+  html += renderModeSwitch();
+
+  if(state.loading || !state.personalData) return html + renderLoading("讀取紀錄中…");
+
+  const expenses = state.personalData.expenses || [];
+  const total = expenses.reduce((s,e)=>s+e.amount,0);
+  const sorted = [...expenses].sort((a,b)=> a.date<b.date?1:-1);
+
+  html += `<div class="perf"></div>`;
+  html += `<div class="total-row"><span style="opacity:.6;font-size:14px;">總支出</span><span class="total-num">NT$ ${fmt(total)}</span></div>`;
+  html += `<button class="btn primary full" style="margin-bottom:22px;" onclick="openPersonalAdd()">📝 新增支出</button>`;
+
+  html += renderCategoryBreakdown(expenses);
+
+  html += `<div class="section-label">支出紀錄 (${expenses.length})</div>`;
+  if(sorted.length===0) html += `<div class="empty"><div class="t">還沒有紀錄</div><div class="d">開始記錄你自己的花費吧。</div></div>`;
+  sorted.forEach(e => {
+    const cat = CATEGORIES.find(c=>c.key===e.category) || CATEGORIES[5];
+    html += `<div class="expense-row">
+      <div class="expense-icon">${icon(cat.icon)}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="expense-note">${esc(e.note || cat.label)}</div>
+        <div class="expense-meta">${e.date}</div>
+      </div>
+      <div class="expense-amount">${fmt(e.amount)}</div>
+      <span class="del" onclick="deletePersonalExpense('${e.id}')">🗑</span>
+    </div>`;
+  });
+  return html;
+}
+
+function renderPersonalAddExpense(){
+  const f = state.form;
+  const canSave = (parseFloat(f.amount)||0) > 0;
+  let html = header("新增支出", { onBack:"setState({view:'home'})" });
+  html += `<div class="field"><div class="field-label">金額</div>
+    <input id="amountInput" type="text" inputmode="decimal" class="mono" style="font-size:20px;" value="${esc(f.amount)}" placeholder="0" oninput="setForm({amount:sanitizeAmount(this.value)})"></div>`;
+  html += `<div class="field"><div class="field-label">類別</div><div class="chips">
+    ${CATEGORIES.map(c=>chip(c.label,{selected:f.category===c.key, onClick:`setForm({category:'${c.key}'})`})).join("")}</div></div>`;
+  html += `<div class="field"><div class="field-label">備註</div>
+    <input id="noteInput" value="${esc(f.note)}" placeholder="例如:午餐"
+      oninput="setFormSilent({note:this.value})"></div>`;
+  html += `<div class="field"><div class="field-label">日期</div>
+    <input id="dateInput" type="date" value="${esc(f.date)}" oninput="setForm({date:this.value})"></div>`;
+  html += `<button class="btn primary full" ${!canSave?"disabled":""} onclick="savePersonalExpense()">儲存支出</button>`;
+  return html;
 }
 
 function renderTrip(){
@@ -611,6 +731,7 @@ function render(){
   else if(state.view==="loading") html = renderLoading();
   else if(state.view==="spaceGate") html = renderSpaceGate();
   else if(state.view==="home") html = renderHome();
+  else if(state.view==="personalAdd") html = renderPersonalAddExpense();
   else if(state.view==="newTrip") html = renderNewTrip();
   else if(state.view==="trip") html = renderTrip();
   else if(state.view==="addExpense") html = renderAddExpense();
@@ -631,10 +752,11 @@ function render(){
 /* 讓內嵌的 onclick / oninput 能呼叫到這些函式(module 的頂層變數不會自動掛到 window 上) */
 Object.assign(window, {
   setState, setForm, setFormSilent, sanitizeAmount,
-  joinSpace, switchSpace,
+  joinSpace, switchSpace, setMode,
   openTrip, backHome, createTrip, endTrip, reopenTrip,
   addMember, deleteExpense, openAddExpense, saveExpense,
   toggleParticipant, setCustomAmount, addTripMember, removeTripMember,
+  openPersonalAdd, savePersonalExpense, deletePersonalExpense,
 });
 
 render();
