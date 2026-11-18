@@ -1,5 +1,5 @@
 
-import {CATEGORIES,money,summarize,shares,validateRecord,seedRecords,parseAmount,splitHint,initialPreview,chartDays} from './daily-model.mjs';
+import {CATEGORIES,money,summarize,validateRecord,parseAmount,chartDays,sharedRecordRows} from "./daily-model.mjs";
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 const currentMonth=today().slice(0,7),monthTitle=m=>Number(m.slice(0,4))+' 年 '+Number(m.slice(5))+' 月';

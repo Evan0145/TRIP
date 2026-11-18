@@ -11,9 +11,10 @@ The production entry point now uses real Firebase Email authentication and a per
 - Created an actual emulator group/trip with two participants; saved shared expense 100, split 50/50. Settlement showed friend owes payer 50. Personal homepage combined own share 50 with personal expense 80 = 130.
 - Second emulator account initially saw zero private entries and its own default budget; incorrect invite rejected. Valid invite joined the group. Its personal total became only its own share 50; first account's private coffee entry and budget remained hidden.
 - Security rules pass 37 isolated emulator tests, including anonymous/other-user denial, private schema validation, budget restrictions, invite/owner protections, closed trips and legacy compatibility.
-- Frontend, authentication and model checks: 38 passing tests.
+- Frontend, authentication and model checks: 40 passing tests.
 
 ## Defects fixed
+- Final reload QA caught a missing import in shared-ledger aggregation; fixed it and added two production-module integration tests for actual subscription setup, own-share totals, logout cleanup and pending-write filtering.
 - Raw 12.5/-5 values can no longer silently become 125/5; personal amounts require integers.
 - Fractional split counts show an invalid-input hint rather than throwing and leaving stale figures.
 - Statistics include every calendar day and all categories. Preview reset restores its entire initial state.
