@@ -1,0 +1,43 @@
+
+.arrival-screen[hidden]{display:none!important}
+.arrival-screen{position:fixed;inset:0;z-index:1000;overflow-y:auto;overflow-x:hidden;background:#D9CFC0;color:#173B43;opacity:1;transition:opacity .28s ease}
+.arrival-screen.is-closing{opacity:0;pointer-events:none}
+.arrival-world{position:absolute;inset:0;min-height:100%;overflow:hidden;pointer-events:none;background:linear-gradient(#BFE6F2 0%,#8ACAE0 45%,#FFF3C4 45.1%,#D9CFC0 62%)}
+.arrival-cloud{position:absolute;top:20%;left:8%;width:130px;height:28px;border-radius:99px;background:#FFFEF8cc}
+.arrival-cloud:before{content:"";position:absolute;left:32px;bottom:0;width:50px;height:50px;background:inherit;border-radius:50%}
+.arrival-cloud.second{left:auto;right:5%;top:27%;width:90px;opacity:.7}
+.arrival-sea{position:absolute;left:0;right:0;top:30%;height:18%;background:linear-gradient(#1B7A9E,#3AA6C2)}
+.arrival-sea:before{content:"";position:absolute;left:-5%;right:-5%;top:32%;height:35px;border-block:1px solid #FFFFFF66;transform:rotate(-3deg)}
+.arrival-sea span{position:absolute;right:20px;top:18px;color:#F4FCFF;font-size:10px;letter-spacing:.12em}
+.arrival-track{position:absolute;top:calc(48% + 21px);left:0;right:0;height:17px;border-block:4px solid #53625A;background:repeating-linear-gradient(90deg,#775940 0 12px,#D9CFC0 12px 24px)}
+.arrival-train{position:absolute;top:calc(48% - 44px);left:-330px;width:320px;height:auto;filter:drop-shadow(0 4px 2px #14322822)}
+.arrival-screen.is-playing .arrival-train{animation:arrival-pass 3.2s linear both}
+.arrival-crossing{position:absolute;top:calc(48% - 100px);left:22px;width:49px;height:63px;background:#193228;border:3px solid #FFC91A;border-radius:9px}
+.arrival-crossing:after{content:"";position:absolute;top:60px;left:19px;width:7px;height:58px;background:repeating-linear-gradient(#17251F 0 8px,#FFC91A 8px 16px)}
+.arrival-crossing i{position:absolute;top:17px;left:4px;width:15px;height:15px;border-radius:50%;background:#D63A22;animation:arrival-signal .7s step-end infinite}
+.arrival-crossing i+i{left:auto;right:4px;animation-delay:.35s}
+.arrival-crossing b{position:absolute;top:47px;left:56px;width:130px;height:11px;border-radius:9px;background:repeating-linear-gradient(45deg,#FFC91A 0 12px,#17251F 12px 24px)}
+.arrival-content{position:relative;z-index:2;max-width:760px;min-height:100dvh;margin:auto;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:clamp(190px,29dvh,300px);padding:calc(54px + env(safe-area-inset-top,0px)) 22px calc(26px + env(safe-area-inset-bottom,0px))}
+.arrival-brand{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.arrival-brand img{border-radius:18px;box-shadow:0 5px 20px #173B431A}
+.arrival-brand strong{font-family:'Noto Serif TC',serif;font-size:37px;line-height:1.1;letter-spacing:-.04em}
+.arrival-brand>span{font-size:11px;letter-spacing:.24em}
+.arrival-ticket{width:100%;max-width:480px;border:1px solid #E6DFC8;border-radius:22px;background:#FFFEF8;padding:23px;box-shadow:0 12px 40px #173B431A}
+.arrival-ticket-label{font-size:9px;letter-spacing:.2em;color:#718078}
+.arrival-ticket h1{font-size:24px;line-height:1.6;margin:12px 0 7px}
+.arrival-ticket p{font-size:13px;line-height:1.9;color:#718078;margin:0 0 18px}
+.arrival-enter{width:100%;min-height:48px;border:0;border-radius:12px;background:#D63A22;color:#fff;font-weight:700;font-size:15px;padding:11px 16px;display:flex;align-items:center;justify-content:space-between}
+.arrival-ticket small{display:block;text-align:center;font-size:10px;color:#718078;margin-top:12px}
+.arrival-dismiss{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:18px;z-index:3;min-height:40px;border:1px solid #FFFFFF99;border-radius:99px;background:#FFFEF8CC;color:#1F7A52;padding:8px 14px;font-size:12px}
+.arrival-screen.motion-reduced .arrival-train{animation:none;left:50%;transform:translateX(-50%)}
+.arrival-screen.motion-reduced .arrival-crossing i{animation:none}
+@keyframes arrival-pass{from{left:-330px}to{left:calc(100% + 20px)}}
+@keyframes arrival-signal{0%,49%{opacity:1;box-shadow:0 0 12px #D63A2277}50%,100%{opacity:.2;box-shadow:none}}
+@media(max-height:600px) and (min-width:600px){
+ .arrival-content{display:grid;grid-template-columns:1fr 1fr;gap:30px;padding:calc(38px + env(safe-area-inset-top,0px)) 30px calc(20px + env(safe-area-inset-bottom,0px))}
+ .arrival-brand{align-self:start;margin-top:30px}
+ .arrival-ticket{padding:18px}
+ .arrival-ticket h1{font-size:20px}
+ .arrival-train{width:280px;top:calc(48% - 34px)}
+}
+@media(prefers-reduced-motion:reduce){.arrival-screen{transition:none}.arrival-screen .arrival-train{animation:none;left:50%;transform:translateX(-50%)}.arrival-screen .arrival-crossing i{animation:none}}
