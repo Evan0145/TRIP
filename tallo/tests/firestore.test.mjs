@@ -103,3 +103,25 @@ test('atomic owner import of ended trip with validated expense',async()=>{
  b.set(t,{...tripData(),status:'已結束'});
  b.set(doc(d,'groups/G1/trips/IMPORTED/expenses/E1'),expense());await assertSucceeds(b.commit());
 });
+
+const personalEntry=()=>({id:'P1',date:'2026-11-19',type:'expense',amount:80,category:'food',note:'Coffee',account:'cash',split:null,createdAt:Date.now()});
+test('private ledger: owner can create and read, anonymous and other users denied',async()=>{
+ const p=d=>doc(d,'users/owner/entries/P1');
+ await assertFails(setDoc(p(env.unauthenticatedContext().firestore()),personalEntry()));
+ await assertFails(setDoc(p(db('outsider')),personalEntry()));
+ await assertSucceeds(setDoc(p(db('owner')),personalEntry()));
+ await assertSucceeds(getDoc(p(db('owner'))));await assertFails(getDoc(p(db('outsider'))));
+});
+test('private ledger: only own budget may be changed',async()=>{
+ const p=d=>doc(d,'users/owner/settings/budget');
+ await assertFails(setDoc(p(db('outsider')),{amount:100}));
+ await assertSucceeds(setDoc(p(db('owner')),{amount:18000}));
+ await assertSucceeds(updateDoc(p(db('owner')),{amount:20000}));
+ await assertFails(getDoc(p(db('outsider'))));
+ for(const amount of [0,-1,1.5,10000001])await assertFails(setDoc(p(db('owner')),{amount}));
+ await assertFails(setDoc(p(db('owner')),{amount:10,public:true}));
+});
+for(const [label,patch] of [['decimal',{amount:1.5}],['negative',{amount:-1}],['extra field',{public:true}],['unknown account',{account:'shared'}],['forged split',{split:{count:3}}],['wrong id',{id:'P2'}],['long note',{note:'x'.repeat(121)}]])test('private ledger rejects '+label,async()=>await assertFails(setDoc(doc(db('owner'),'users/owner/entries/P1'),{...personalEntry(),...patch})));
+test('private ledger income accepted and prior entries cannot be overwritten or deleted',async()=>{
+ const p=doc(db('owner'),'users/owner/entries/P1');await assertSucceeds(setDoc(p,{...personalEntry(),type:'income'}));await assertFails(updateDoc(p,{amount:1}));await assertFails(deleteDoc(p));
+});

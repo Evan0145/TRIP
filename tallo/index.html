@@ -151,12 +151,14 @@ table.cat-table td{padding:6px 0;font-size:13.5px;}
 .subhead h2{font-size:20px;}
 code{font-family:'IBM Plex Mono',monospace;background:var(--paper-dark);padding:1px 5px;border-radius:4px;}
 </style>
-<link rel="stylesheet" href="enoden.css">
+<link rel="stylesheet" href="enoden.css"><link rel="stylesheet" href="daily.css">
 </head>
 <body>
 <div id="phoneStage"><section class="phone-frame" aria-label="Tallo 江之電旅行帳本"><div class="phone-island" aria-hidden="true"></div><div class="phone-scroll" id="phoneScroll"><div id="app"></div></div></section></div>
 
 <script type="module">
+import {mountDaily,leaveDaily} from "./daily-app.mjs";
+
 /* ============================================================
    旅行分帳(App 版:登入 → 底部導覽列)
    一次性設定:
@@ -227,7 +229,7 @@ function today(){
   return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
 }
 function uid(p){ return p + crypto.randomUUID().replace(/-/g, ""); }
-function fmt(n){ const v = Math.round((n+Number.EPSILON)*10)/10; return v.toLocaleString("zh-TW",{maximumFractionDigits:1}); }
+function fmt(n){ const v = Math.round((n+Number.EPSILON)*100)/100; return v.toLocaleString("zh-TW",{maximumFractionDigits:2}); }
 function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function sanitizeAmount(v){
   let s = v.replace(/[^0-9.]/g, "");
@@ -401,9 +403,10 @@ function startAuth(){
   try { setPersistence(auth, browserLocalPersistence).catch(()=>{}); } catch(e){}
   onAuthStateChanged(auth, (user) => {
     state.user = user;
+    if(!user) leaveDaily();
     if(user){
       subscribeGroups(user.uid);
-      if(!authTransition && (state.screen === "boot" || state.screen === "login")) { state.screen = "app"; state.tab = "add"; }
+      if(!authTransition && (state.screen === "boot" || state.screen === "login")) { state.screen = "app"; state.tab = "daily"; }
     } else {
       if(unsubGroups){ unsubGroups(); unsubGroups = null; }
       if(unsubTrips){ unsubTrips(); unsubTrips = null; }
@@ -435,7 +438,7 @@ async function authenticate(mode){
     const delay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 200 : 3200;
     setTimeout(() => {
       authTransition = false; authSuccess = false;
-      if(auth.currentUser) setState({screen:"app",tab:"add",error:""});
+      if(auth.currentUser) setState({screen:"app",tab:"daily",error:""});
       else setState({screen:"login"});
     }, delay);
   } catch(e){
@@ -458,7 +461,7 @@ function togglePassword(){
 }
 function submitAuth(){ if(state.form.authMode === "signup") doSignup(); else doLogin(); }
 async function doGoogle(){ if(!GOOGLE_SIGN_IN_ENABLED){ fail(new Error("Google 登入尚未開放，請使用 Email 登入")); return; } try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch(e){ fail(e); } }
-function doLogout(){ if(confirm("確定要登出嗎?")) signOut(auth).catch(fail); }
+function doLogout(){ signOut(auth).catch(fail); }
 
 /* ============================================================
    群組與旅程的選取(會記住上次用的群組/旅程)
@@ -467,7 +470,9 @@ function subscribeGroups(uidv){
   if(unsubGroups) unsubGroups();
   unsubGroups = onSnapshot(
     query(collection(db, "groups"), where("memberUids", "array-contains", uidv)),
+    {includeMetadataChanges:true},
     (snap) => {
+      if(snap.metadata.hasPendingWrites)return;
       state.groups = snap.docs.map(d => ({ ...d.data(), id:d.id })).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
       state.groupsLoaded = true;
       const want = state.wantGroup && state.groups.find(g => g.id === state.wantGroup);
@@ -496,7 +501,9 @@ function selectGroup(gid, preferTrip){
   state.pendingTrip = preferTrip || null; state.justCreated = null;
   unsubTrips = onSnapshot(
     collection(db, "groups", gid, "trips"),
+    {includeMetadataChanges:true},
     (snap) => {
+      if(snap.metadata.hasPendingWrites)return;
       state.trips = snap.docs.map(d => ({ ...d.data(), id:d.id, expenses:[...(d.data().expenses || []), ...(expenseCache.get(d.id) || [])] }));
       watchExpenses(gid, state.trips);
       state.tripsLoaded = true;
@@ -528,6 +535,7 @@ function goTab(k){ setState({ tab:k, meSub:null, expandedId:null, sheet:null });
    群組(建立、邀請碼加入)
    ============================================================ */
 async function createGroup(){
+  state.error="";
   const name = state.form.groupName.trim();
   if(!name) return;
   const u = auth.currentUser;
@@ -546,6 +554,7 @@ async function createGroup(){
   } catch(e){ state.wantGroup = null; fail(e); }
 }
 async function joinGroup(){
+  state.error="";
   const code = state.form.joinCode.trim().toUpperCase();
   if(!code) return;
   const u = auth.currentUser;
@@ -596,14 +605,14 @@ function addTripMember(){
   else setForm({ newTripDraft:"" });
 }
 function removeTripMember(name){ setForm({ newTripMembers: state.form.newTripMembers.filter(m => m !== name) }); }
-function createTrip(){
+async function createTrip(){
   const name = state.form.newTripName.trim();
   if(!name || !state.groupId) return;
   const me = myName();
   const members = [me, ...state.form.newTripMembers.filter(n => n !== me)];
   try { validateTripInput({name, status:"進行中", members}); } catch(e){ fail(e); return; }
   const id = uid("T");
-  setDoc(tripRef(id), { name, status:"進行中", createdAt:Date.now(), members, expenses:[] }).catch(fail);
+  try{await setDoc(tripRef(id), { name, status:"進行中", createdAt:Date.now(), members, expenses:[] });}catch(e){fail(e);return;}
   state.tripId = id; state.justCreated = id; saveLast();
   setState({ tab:"add", meSub:null, form:{...state.form, newTripName:"", newTripMembers:[], newTripDraft:"", forTrip:null} });
   toast("旅程已建立,開始記帳吧");
@@ -694,12 +703,11 @@ async function saveExpense(){
   if(!t || t.status !== "進行中") return;
   const total = parseFloat(f.amount) || 0;
   if(!Number.isFinite(total) || total <= 0 || total > 10000000 || f.participants.length === 0 || f.participants.length > 20) return;
-  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(f.date) || !t.members.includes(f.payer) || !f.participants.every(p => t.members.includes(p))) return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(f.date) || !t.members.includes(f.payer) || !f.participants.every(p => t.members.includes(p))) return;
   let shares;
   if(f.splitMethod === "equal"){
-    shares = f.participants.map(p => ({ name:p, amount: Math.round((total/f.participants.length)*10)/10 }));
-    const diff = Math.round((total - shares.reduce((s,x) => s + x.amount, 0))*10)/10;
-    if(diff !== 0) shares[0].amount = Math.round((shares[0].amount + diff)*10)/10;
+    const cents=Math.round(total*100),base=Math.floor(cents/f.participants.length),rest=cents%f.participants.length;
+    shares=f.participants.map((p,i)=>({name:p,amount:(base+(i<rest?1:0))/100}));
   } else {
     const sum = f.participants.reduce((s,p) => s + (parseFloat(f.customAmounts[p])||0), 0);
     if(Math.abs(sum - total) >= 0.05) return;
@@ -918,7 +926,7 @@ function renderLogin(){
   </div>`;
 }
 function renderAppBanner(){
-  return `<div class="app-banner"><div class="banner-brand">Tallo</div><div class="banner-route">江ノ電 ・ 旅の記録</div>${TRAIN_SVG}</div>`;
+  return `<div class="app-banner"><button type="button" onclick="goTab('daily')" class="return-daily">‹ 個人帳本</button><div class="banner-brand">Tallo</div><div class="banner-route">江ノ電 ・ 旅の記録</div>${TRAIN_SVG}</div>`;
 }
 function renderTopbar(){
   const t = curTrip(), g = curGroup();
@@ -1145,7 +1153,7 @@ function renderMe(){
   }
 
   html += groupForms();
-  html += `<div class="section-label">資料</div><div class="row">
+  html += `<div class="section-label">共用帳資料</div><div class="row">
     <button class="btn ghost" style="flex:1;" onclick="openImport()">📥 匯入舊資料</button>
     <button class="btn ghost" style="flex:1;" onclick="exportGroup()">💾 匯出備份</button></div>`;
   return html;
@@ -1193,6 +1201,15 @@ function renderImport(){
    總繪製
    ============================================================ */
 function render(){
+  if(state.screen === "app" && state.tab === "daily"){
+    if(!document.getElementById('dailyApp')) { document.getElementById('app').innerHTML='<div id="dailyApp"></div>';
+    mountDaily({user:state.user,db,auth,api:{doc,collection,query,where,onSnapshot,setDoc},logout:doLogout,goShared:(mode,gid)=>{
+      if(gid && state.groups.some(g=>g.id===gid)) selectGroup(gid,null);
+      state.tab=mode==='add'?'add':'me'; state.meSub=null;state.sheet=null;
+      if(mode==='add')state.form={...state.form,amount:'',note:'',date:today()};render();
+    }}); } fitPhone(); return;
+  }
+
   if(composing){ pendingRender = true; return; }
   const active = document.activeElement;
   const activeId = (active && active.id) ? active.id : null;

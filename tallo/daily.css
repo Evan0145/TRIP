@@ -133,3 +133,9 @@ button{cursor:pointer}
 
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .split-group .btn{display:block;width:100%;padding:12px;font:inherit;cursor:pointer}
+
+.daily-field input,.daily-field select{width:100%;min-width:0}
+.week-chart{gap:3px}.week-chart div{min-width:0;font-size:7px}.chart-legend{gap:6px}
+
+.return-daily{position:absolute;right:16px;top:47px;z-index:3;background:#FFFEF8;border:1px solid #D9D2BC;border-radius:20px;padding:5px 10px;color:#1F7A52;font-size:12px}.daily-save-status{position:fixed;bottom:80px;background:#FFF3C4;padding:12px;z-index:90;font-size:12px}
+#app:has(#dailyApp){background:#F6F3E9}

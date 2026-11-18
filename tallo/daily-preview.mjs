@@ -1,5 +1,5 @@
 
-import {CATEGORIES,money,summarize,shares,validateRecord,seedRecords} from './daily-model.mjs';
+import {CATEGORIES,money,summarize,shares,validateRecord,seedRecords,parseAmount,splitHint,initialPreview,chartDays} from './daily-model.mjs';
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 const currentMonth=today().slice(0,7),monthTitle=m=>Number(m.slice(0,4))+' 年 '+Number(m.slice(5))+' 月';
@@ -13,8 +13,7 @@ const ICON={
 };
 const TABS=[['home','首頁'],['list','明細'],['stats','統計'],['split','分帳'],['me','我的']];
 const TRAIN='<svg class="coast-train" viewBox="0 0 210 55" aria-hidden="true"><rect x="3" y="7" width="204" height="34" rx="9" fill="#1F7A52"/><rect x="3" y="24" width="204" height="9" fill="#FFF3C4"/>'+Array.from({length:7},(_,i)=>'<rect x="'+(12+i*27)+'" y="12" width="20" height="9" rx="2" fill="#DFF6FF"/>').join('')+'<circle cx="25" cy="45" r="5" fill="#26372c"/><circle cx="185" cy="45" r="5" fill="#26372c"/><text x="108" y="39" text-anchor="middle" font-size="5" fill="#FFF3C4" letter-spacing="2">ENODEN</text></svg>';
-let state={view:'home',month:currentMonth,budget:18000,filter:'all',kind:'all',returnView:'home',records:seedRecords(currentMonth),groups:[{id:'g1',name:'週末聚餐',count:3}],draft:null,modal:null,error:'',toast:''};
-state.records.push({id:'r15',date:currentMonth+'-16',amount:1260,category:'food',note:'週末和朋友吃飯',account:'card',type:'expense',split:{group:'g1',count:3}});
+let state={view:'home',...initialPreview(currentMonth)};
 let toastTimer;
 const own=t=>t.split?shares(t.amount,t.split.count)[0]:t.amount;
 const cat=id=>CATEGORIES.find(c=>c.id===id)||CATEGORIES.at(-1);
@@ -35,7 +34,7 @@ function row(t){
 }
 function recent(rows,max){const sorted=[...rows].reverse().sort((a,b)=>b.date.localeCompare(a.date));return sorted.slice(0,max).map(row).join('');}
 function home(){
- const s=monthRows(),todayExpense=s.rows.filter(t=>t.date===today()&&t.type==='expense').reduce((a,t)=>a+own(t),0);
+ const s=monthRows(),todayExpense=state.records.filter(t=>t.date===today()&&t.type==='expense').reduce((a,t)=>a+own(t),0);
  return '<header class="daily-hero"><div class="daily-brand">Tallo</div><div class="daily-kicker">日常的每一站 ・ DAILY JOURNAL</div><span class="daily-preview-badge">設計預覽</span><div class="daily-greeting">把日子，慢慢記下來。</div><div class="daily-subtitle">一杯咖啡、一趟通勤，都是生活的軌跡。</div>'+TRAIN+'</header><main class="daily-body home-body"><section class="station-card month-ticket"><div class="ticket-eyebrow"><span>生活乘車券 / THIS MONTH</span>'+monthNav()+'</div><div class="ticket-caption">本月支出</div><div class="ticket-main"><small>NT$</small>'+money(s.expense)+'</div><div class="ticket-divider"></div><div class="ticket-bottom"><div><div class="mini-label">預算'+(s.remaining<0?'已超出':'還可以用')+'</div><div class="value" '+(s.remaining<0?'style="color:#D63A22"':'')+'>NT$ '+money(Math.abs(s.remaining))+'</div></div><div style="text-align:right"><div class="mini-label">今天花了</div><div class="value" style="color:#17251F">NT$ '+money(todayExpense)+'</div></div></div><div class="budget-track"><i style="width:'+Math.min(100,s.ratio*100)+'%;'+(s.ratio>1?'background:#D63A22':'')+'"></i></div><div class="budget-line"><span>每月預算 NT$ '+money(state.budget)+'</span><b>'+Math.round(s.ratio*100)+'%</b></div></section><button class="quick-add" data-action="add"><span>＋</span> 記一筆日常</button><p class="daily-caption">自己的帳，打開就能記。</p><div class="section-row"><h2>快速記帳</h2><span class="mini-label">從生活的小事開始</span></div><div class="daily-category-row">'+CATEGORIES.slice(0,4).map(c=>'<button class="daily-shortcut" data-action="add" data-category="'+c.id+'"><span>'+c.icon+'</span>'+c.label+'</button>').join('')+'</div><div class="section-row"><h2>最近的日常</h2><button data-action="nav" data-view="list">全部明細 ›</button></div><section class="record-list">'+(recent(s.rows,3)||'<div class="daily-empty">這個月還沒記帳，從第一筆開始吧。</div>')+'</section><p class="daily-footer-note">江之電陪你，記下每一站生活。<br>範例帳目預覽 · 所有操作僅暫存本頁</p></main>';
 }
 function ledger(){
@@ -46,9 +45,9 @@ function ledger(){
 function stats(){
  const s=monthRows(),expenses=s.rows.filter(t=>t.type==='expense'),items=CATEGORIES.map(c=>({...c,total:expenses.filter(t=>t.category===c.id).reduce((a,t)=>a+own(t),0)})).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
  let acc=0;const gradient=items.map(c=>{const start=acc;acc+=c.total/(s.expense||1)*100;return c.color+' '+start+'% '+acc+'%';}).join(',')||'#EEEBDD 0% 100%';
- const days=Array.from({length:7},(_,i)=>String(13+i).padStart(2,'0'));
+ const days=chartDays(state.month);
  const values=days.map(day=>expenses.filter(t=>t.date===state.month+'-'+day).reduce((a,t)=>a+own(t),0)),max=Math.max(1,...values);
- return header('生活統計','看懂花費，照自己的步調生活。')+'<main class="daily-body"><div class="month-strip">'+monthNav()+'<span class="mini-label">個人花費</span></div><section class="station-card chart-card"><div class="mini-label">本月支出</div><div class="ticket-main" style="font-size:30px;margin-top:4px"><small>NT$</small>'+money(s.expense)+'</div><div class="ticket-divider"></div><div class="daily-label">花在哪些地方？</div><div class="ring-row"><div class="daily-ring" style="background:conic-gradient('+gradient+')"><span>本月共記下<b>'+expenses.length+'</b>筆日常</span></div><div class="chart-legend">'+items.slice(0,4).map(c=>'<div><i style="background:'+c.color+'"></i>'+c.label+'<strong>'+Math.round(c.total/(s.expense||1)*100)+'%</strong></div>').join('')+'</div></div></section><div class="section-row"><h2>分類花費</h2><span class="mini-label">分帳只計自己的負擔</span></div><section class="station-card chart-card">'+(items.map(c=>'<div class="row"><span style="font-size:11px">'+c.icon+' '+c.label+'</span><span class="record-value">NT$ '+money(c.total)+'</span></div><div class="horizontal-bar"><i style="width:'+(c.total/(s.expense||1)*100)+'%;background:'+c.color+'"></i></div>').join('')||'<div class="daily-empty">記下第一筆支出後，就能看到統計。</div>')+'</section><div class="section-row"><h2>13–19 日的生活節奏</h2><span class="mini-label">每日個人支出</span></div><section class="station-card chart-card"><div class="week-chart">'+values.map((v,i)=>'<div><i style="height:'+Math.max(3,v/max*70)+'px" title="NT$ '+money(v)+'"></i>'+days[i]+'</div>').join('')+'</div></section></main>';
+ return header('生活統計','看懂花費，照自己的步調生活。')+'<main class="daily-body"><div class="month-strip">'+monthNav()+'<span class="mini-label">個人花費</span></div><section class="station-card chart-card"><div class="mini-label">本月支出</div><div class="ticket-main" style="font-size:30px;margin-top:4px"><small>NT$</small>'+money(s.expense)+'</div><div class="ticket-divider"></div><div class="daily-label">花在哪些地方？</div><div class="ring-row"><div class="daily-ring" style="background:conic-gradient('+gradient+')"><span>本月共記下<b>'+expenses.length+'</b>筆日常</span></div><div class="chart-legend">'+items.map(c=>'<div><i style="background:'+c.color+'"></i>'+c.label+'<strong>'+Math.round(c.total/(s.expense||1)*100)+'%</strong></div>').join('')+'</div></div></section><div class="section-row"><h2>分類花費</h2><span class="mini-label">分帳只計自己的負擔</span></div><section class="station-card chart-card">'+(items.map(c=>'<div class="row"><span style="font-size:11px">'+c.icon+' '+c.label+'</span><span class="record-value">NT$ '+money(c.total)+'</span></div><div class="horizontal-bar"><i style="width:'+(c.total/(s.expense||1)*100)+'%;background:'+c.color+'"></i></div>').join('')||'<div class="daily-empty">記下第一筆支出後，就能看到統計。</div>')+'</section><div class="section-row"><h2>本月每日支出</h2><span class="mini-label">每日個人支出</span></div><section class="station-card chart-card"><div class="week-chart">'+values.map((v,i)=>'<div><i style="height:'+Math.max(3,v/max*70)+'px" title="NT$ '+money(v)+'"></i>'+days[i]+'</div>').join('')+'</div></section></main>';
 }
 function splitPage(){
  const shared=state.records.filter(t=>t.split),paid=shared.reduce((a,t)=>a+t.amount,0),personal=shared.reduce((a,t)=>a+own(t),0);
@@ -62,7 +61,7 @@ function addPage(){
  const d=draft();
  return '<header class="daily-header"><div class="heading-line"><div style="display:flex;align-items:center"><button class="daily-back" data-action="back" aria-label="返回">‹</button><div><h1>記一筆日常</h1><p>先記下來，再繼續今天的旅程。</p></div></div><span class="group-pill">個人帳本</span></div></header><form id="dailyEntry" class="daily-form">'+(state.error?'<div class="daily-error" role="alert">'+esc(state.error)+'</div>':'')+'<div class="type-segment"><button type="button" class="'+(d.type==='expense'?'active':'')+'" data-action="entry-type" data-id="expense">支出</button><button type="button" class="'+(d.type==='income'?'active':'')+'" data-action="entry-type" data-id="income">收入</button></div><div class="daily-amount"><label for="entryAmount">金額 / AMOUNT</label><div class="amount-input-row"><span>NT$</span><input id="entryAmount" name="amount" inputmode="numeric" type="text" value="'+esc(d.amount)+'" placeholder="0" autocomplete="off" required aria-label="金額"></div></div><div class="daily-label">分類</div><div class="daily-category-grid">'+CATEGORIES.map(c=>'<button type="button" data-action="entry-category" data-id="'+c.id+'" class="'+(c.id===d.category?'active':'')+'"><span>'+c.icon+'</span>'+c.label+'</button>').join('')+'</div><div class="daily-field-pair"><div class="daily-field"><label for="entryDate">日期</label><input id="entryDate" name="date" type="date" value="'+esc(d.date)+'" required></div><div class="daily-field"><label for="entryAccount">'+(d.type==='expense'?'付款帳戶':'存入帳戶')+'</label><select id="entryAccount" name="account">'+Object.entries(ACCOUNT).map(([id,a])=>'<option value="'+id+'" '+(id===d.account?'selected':'')+'>'+a.label+'</option>').join('')+'</select></div></div><div class="daily-field"><label for="entryNote">備註</label><input id="entryNote" name="note" value="'+esc(d.note)+'" placeholder="這一筆，記下什麼日常？" maxlength="120"></div>'+(d.type==='expense'?'<button class="split-toggle" type="button" data-action="entry-split" aria-pressed="'+d.split+'"><span><strong>這筆要分帳</strong><small>預設只記自己，需要時再開啟</small></span><i class="toggle-switch" aria-hidden="true"></i></button>'+(d.split?'<section class="split-options"><div class="daily-field"><label for="entryGroup">分帳帳本</label><select id="entryGroup" name="group">'+state.groups.map(g=>'<option value="'+esc(g.id)+'" '+(g.id===d.group?'selected':'')+'>'+esc(g.name)+'</option>').join('')+'</select></div><div class="daily-field"><label for="entryCount">平均分攤人數（包含自己）</label><input id="entryCount" name="count" type="number" min="2" max="20" value="'+d.count+'"></div><p id="shareHint">'+shareHint(d)+'</p></section>':''):'')+'<div class="daily-save"><button type="submit">儲存'+(d.type==='income'?'收入':'這筆日常')+'</button></div></form>';
 }
-function shareHint(d){const amount=Number(d.amount);if(!Number.isSafeInteger(amount)||amount<=0||Number(d.count)<2||Number(d.count)>20)return '輸入總金額後，會顯示自己的分攤金額。';const own=shares(amount,Number(d.count))[0];return '你先付 NT$ '+money(amount)+'，個人帳本記入 NT$ '+money(own)+'。<br>其餘 NT$ '+money(amount-own)+' 會列為待收回。';}
+function shareHint(d){const amount=Number(d.amount);if(!Number.isSafeInteger(amount)||amount<=0||Number(d.count)<2||Number(d.count)>20)return '輸入總金額後，會顯示自己的分攤金額。';const split=splitHint(amount,Number(d.count));if(!split)return '請輸入有效總金額與 2 至 20 位整數人數。';const own=split.own;return '你先付 NT$ '+money(amount)+'，個人帳本記入 NT$ '+money(own)+'。<br>其餘 NT$ '+money(amount-own)+' 會列為待收回。';}
 function modal(){
  if(!state.modal)return '';
  let body='',title='';
@@ -84,8 +83,8 @@ function startEntry(category,group){
 }
 document.addEventListener('input',event=>{
  if(!event.target.closest('#dailyEntry'))return;
- const key=event.target.name;if(!key)return;
- if(key==='amount'){event.target.value=event.target.value.replace(/\D/g,'');}
+ const key=event.target.name;if(!key)return;state.error='';document.querySelector('.daily-error')?.remove();
+ // Raw money input is validated on submit; do not silently change its value.
  state.draft={...draft(),[key]:event.target.value};
  const hint=document.getElementById('shareHint');if(hint)hint.innerHTML=shareHint(draft());
 });
@@ -109,13 +108,13 @@ document.addEventListener('click',event=>{
  if(a==='invite-modal'){state.modal='invite';render(true);}
  if(a==='reset-modal'){state.modal='reset';render(true);}
  if(a==='close-modal'){state.modal=null;render(true);}
- if(a==='reset'){state.records=seedRecords(currentMonth);state.budget=18000;state.modal=null;notify('已重設此頁的範例紀錄');}
+ if(a==='reset'){Object.assign(state,initialPreview(currentMonth));notify('已重設此頁的範例紀錄');}
 });
 document.addEventListener('submit',event=>{
  event.preventDefault();const form=event.target;
  if(form.id==='dailyEntry'){
   const d=draft(),record={id:crypto.randomUUID(),date:d.date,type:d.type,amount:Number(d.amount),category:d.category,note:d.note.trim(),account:d.account,split:d.split?{group:d.group,count:Number(d.count)}:null};
-  try{validateRecord(record);state.records.push(record);state.month=record.date.slice(0,7);state.draft=null;state.view='home';state.error='';document.getElementById('phoneScroll').scrollTop=0;notify('已記下這筆'+(record.type==='income'?'收入':'日常')+'（預覽）');}
+  try{record.amount=parseAmount(d.amount);validateRecord(record);if(record.split&&!state.groups.some(g=>g.id===record.split.group))throw new Error('請選擇有效分帳帳本');state.records.push(record);state.month=record.date.slice(0,7);state.draft=null;state.view='home';state.error='';document.getElementById('phoneScroll').scrollTop=0;notify('已記下這筆'+(record.type==='income'?'收入':'日常')+'（預覽）');}
   catch(e){state.error=e.message;render(true);}
  }
  if(form.id==='budgetForm'){const n=Number(new FormData(form).get('budget'));if(Number.isSafeInteger(n)&&n>0&&n<=10000000){state.budget=n;state.modal=null;notify('預算已更新（預覽）');}}

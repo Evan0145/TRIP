@@ -47,3 +47,26 @@ export function seedRecords(month){
  make('r13',11,360,'fun','週末看電影'),
  make('r14',5,42000,'other','薪資入帳','bank','income')];
 }
+
+// Preserve raw input until validation; never turn 12.5 into 125 or -5 into 5.
+export function parseAmount(raw){
+ if(typeof raw!=='string'||!/^\d+$/.test(raw))throw new Error('請輸入 1 至 10,000,000 元的整數金額');
+ const value=Number(raw);if(!Number.isSafeInteger(value)||value<1||value>10000000)throw new Error('請輸入 1 至 10,000,000 元的整數金額');return value;
+}
+export function splitHint(amount,count){
+ if(!Number.isSafeInteger(amount)||amount<1||amount>10000000||!Number.isInteger(count)||count<2||count>20)return null;
+ const own=shares(amount,count)[0];return {own,receivable:Math.round((amount-own)*100)/100};
+}
+export function initialPreview(month){
+ return {month,budget:18000,filter:'all',kind:'all',returnView:'home',records:[...seedRecords(month),{id:'r15',date:month+'-16',amount:1260,category:'food',note:'週末和朋友吃飯',account:'card',type:'expense',split:{group:'g1',count:3}}],groups:[{id:'g1',name:'週末聚餐',count:3}],draft:null,modal:null,error:'',toast:''};
+}
+export function chartDays(month){return Array.from({length:new Date(Number(month.slice(0,4)),Number(month.slice(5)),0).getDate()},(_,i)=>String(i+1).padStart(2,'0'));}
+
+export function sharedRecordRows(gid,tid,trip,docs,name){
+ const merged=new Map([...(trip.expenses||[]),...docs].map(e=>[e.id,e]));
+ return [...merged.values()].map(e=>{
+  const ps=e.shares||Object.fromEntries((e.participants||[]).map(p=>[p.name,p.amount]));
+  const mine=Number(ps[name]||0),paid=e.payer===name?Number(e.amount):0;
+  return {id:'shared:'+gid+':'+tid+':'+e.id,date:e.date,type:'expense',amount:mine,category:({FOOD:'food',TRANSPORT:'transport',HOTEL:'home',SHOPPING:'shopping',TICKET:'fun',OTHER:'other'})[e.category]||'other',note:e.note||trip.name,account:'shared',split:null,shared:true,paid,owed:mine,groupId:gid,tripId:tid};
+ });
+}
