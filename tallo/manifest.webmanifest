@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "Tallo 日常記帳",
+  "short_name": "Tallo",
+  "description": "日常的每一站：個人記帳與共用分帳。",
+  "lang": "zh-Hant",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F5F1E5",
+  "theme_color": "#BFE6F2",
+  "icons": [
+    {
+      "src": "assets/tallo-icon.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

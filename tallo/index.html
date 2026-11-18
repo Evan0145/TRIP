@@ -6,6 +6,11 @@
 <meta name="theme-color" content="#E7E2D2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Tallo">
+<link rel="icon" type="image/png" href="assets/tallo-icon.png">
+<link rel="apple-touch-icon" href="assets/tallo-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="stylesheet" href="arrival.css?v=arrival-20261119">
 <title>Tallo — 江之電篇</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
@@ -151,13 +156,15 @@ table.cat-table td{padding:6px 0;font-size:13.5px;}
 .subhead h2{font-size:20px;}
 code{font-family:'IBM Plex Mono',monospace;background:var(--paper-dark);padding:1px 5px;border-radius:4px;}
 </style>
-<link rel="stylesheet" href="enoden.css?v=responsive-20261119"><link rel="stylesheet" href="daily.css?v=responsive-20261119">
+<link rel="stylesheet" href="enoden.css?v=responsive-20261119"><link rel="stylesheet" href="daily.css?v=arrival-20261119">
 </head>
 <body>
 <div id="siteRoot"><section class="site-shell" aria-label="Tallo 江之電旅行帳本"><div class="site-scroll" id="phoneScroll"><div id="app"></div></div></section></div>
 
 <script type="module">
-import {mountDaily,leaveDaily} from "./daily-app.mjs?v=responsive-20261119";
+import {initArrival,showArrival} from "./arrival.mjs?v=arrival-20261119";
+initArrival();
+import {mountDaily,leaveDaily} from "./daily-app.mjs?v=arrival-20261119";
 
 /* ============================================================
    旅行分帳(App 版:登入 → 底部導覽列)
@@ -1195,7 +1202,7 @@ function renderImport(){
 function render(){
   if(state.screen === "app" && state.tab === "daily"){
     if(!document.getElementById('dailyApp')) { document.getElementById('app').innerHTML='<div id="dailyApp"></div>';
-    mountDaily({user:state.user,db,auth,api:{doc,collection,query,where,onSnapshot,setDoc},logout:doLogout,goShared:(mode,gid)=>{
+    mountDaily({user:state.user,db,auth,api:{doc,collection,query,where,onSnapshot,setDoc},logout:doLogout,arrival:showArrival,goShared:(mode,gid)=>{
       if(gid && state.groups.some(g=>g.id===gid)) selectGroup(gid,null);
       state.tab=mode==='add'?'add':'me'; state.meSub=null;state.sheet=null;
       if(mode==='add')state.form={...state.form,amount:'',note:'',date:today()};render();
