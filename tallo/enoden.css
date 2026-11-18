@@ -4,21 +4,19 @@
 :root{--ink:#17251F;--paper:#FFF3C4;--paper-dark:#EEEBDD;--paper-soft:#FFFEF8;--stamp:#D63A22;--brass:#1F7A52;--good:#1F7A52;--line:#D9D2BC;--hair:#E6DFC8;--yellow:#FFC91A}
 *{box-sizing:border-box}
 html,body{height:100%;background:#E7E2D2;font-family:'Noto Sans TC',system-ui,sans-serif;color:var(--ink)}
-body{display:grid;place-items:center;padding:20px;overflow:hidden}
+body{margin:0;padding:0;overflow:hidden}
 button,input,select,textarea{font-family:inherit}
 button{min-height:44px}
 button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1B7A9E;outline-offset:3px}
 input:focus-visible,textarea:focus-visible{outline:2px solid #1B7A9E;outline-offset:2px}
-#phoneStage{position:relative;flex:none}
-.phone-frame{position:absolute;top:0;left:0;width:402px;height:874px;background:#BFE6F2;border-radius:54px;outline:10px solid #141414;box-shadow:0 0 0 12px #434343,0 34px 80px #17251F4d;transform-origin:top left;overflow:hidden;isolation:isolate}
-.phone-island{position:absolute;top:11px;left:145px;width:112px;height:30px;background:#111;border-radius:999px;z-index:60;pointer-events:none}
-.phone-scroll{height:100%;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;overscroll-behavior:contain}
-.phone-scroll::-webkit-scrollbar{display:none}
-#app{max-width:none;min-height:874px;background:#F5F1E5}
+#siteRoot{width:100%;max-width:760px;margin:0 auto;min-height:100dvh}
+.site-shell{position:relative;width:100%;min-height:100dvh;background:#F5F1E5}
+.site-scroll{height:100vh;height:100dvh;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain}
+#app{max-width:none;min-height:100dvh;background:#F5F1E5}
 h1,h2,h3,.card-title,.tb-title{font-family:'Noto Serif TC',serif}
 .mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
-.login{padding:0;display:block;min-height:874px}
-.enoden-login{position:relative;min-height:874px;background:#D9CFC0;overflow:hidden}
+.login{padding:0;display:block;min-height:100dvh}
+.enoden-login{position:relative;min-height:100dvh;background:#D9CFC0;overflow:hidden}
 .enoden-world{position:absolute;inset:0;pointer-events:none;background:linear-gradient(#7EC8E6 0%,#CDEFF7 26%,#FFEFC2 26.2%,#FFEFC2 44%,#D9CFC0 44%)}
 .enoden-sea{position:absolute;top:96px;left:0;right:0;height:132px;background:linear-gradient(#1B7A9E,#3AA6C2);border-top:1px solid #f7fcff80;overflow:hidden}
 .enoden-sea:before,.enoden-sea:after{content:"";position:absolute;width:180%;height:14px;border-top:1px solid #dff6ff80;border-radius:50%;left:-30%;top:55px;transform:rotate(-4deg)}
@@ -33,7 +31,7 @@ h1,h2,h3,.card-title,.tb-title{font-family:'Noto Serif TC',serif}
 .enoden-rail{position:absolute;top:402px;left:0;right:0;height:18px;z-index:2;background:repeating-linear-gradient(90deg,#6B4A2F 0 12px,transparent 12px 25px);border-top:4px solid #444;border-bottom:4px solid #444;box-shadow:0 2px #ffffff80}
 .enoden-train{position:absolute;top:325px;left:-100%;width:94%;height:auto;z-index:8;pointer-events:none;filter:drop-shadow(0 5px 2px #17251f30)}
 .enoden-train.passing{animation:train-pass 6s cubic-bezier(.25,.6,.35,1) both}
-.login-layout{position:relative;z-index:5;min-height:874px;padding:54px 22px 26px;display:flex;flex-direction:column;gap:18px}
+.login-layout{position:relative;z-index:5;min-height:100dvh;padding:54px 22px 26px;display:flex;flex-direction:column;gap:18px}
 .crossing-hero{min-height:355px;position:relative;padding-top:115px}
 .crossing-equipment{height:86px;display:flex;align-items:flex-end;gap:12px;position:absolute;left:0;right:0;top:110px}
 .crossing-signal{position:relative;flex:none;width:54px;height:86px;border:3px solid var(--yellow);background:#222;border-radius:8px;box-shadow:0 3px 0 #17251f22}
@@ -123,3 +121,35 @@ h1,h2,h3,.card-title,.tb-title{font-family:'Noto Serif TC',serif}
 .crossing-equipment{top:90px}.crossing-copy{top:180px}.crossing-copy h1{margin-bottom:8px}.crossing-copy p{margin-bottom:6px}.enoden-rail{top:443px}.enoden-train{top:366px}.crossing-hero{min-height:390px}.login-brand{margin-bottom:12px}.login-brand h2{font-size:22px}.enoden-card .field{margin-bottom:10px}.enoden-card .field-label{display:block}.enoden-card .tabs2{margin-bottom:12px}.login-foot{margin-top:10px}
 
 .crossing-signal:after{height:8px}.coast-label{bottom:54px}
+
+/* A real responsive website: no device bezel, simulated island or canvas scale. */
+:root{--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--nav-height:calc(80px + var(--safe-bottom))}
+html,body{min-height:100%;width:100%;background:#F5F1E5}
+#app{width:100%;margin:0;min-height:100dvh}
+.login-layout{padding:calc(24px + var(--safe-top)) 22px calc(24px + var(--safe-bottom));min-height:100dvh}
+.crossing-hero{min-height:360px}
+.crossing-equipment{top:50px}
+.crossing-copy{top:140px}
+.enoden-train{top:280px;width:min(94%,420px)}
+.enoden-rail{top:356px}
+.enoden-road{top:340px}
+.enoden-card{max-width:480px;margin-inline:auto}
+.enoden-card input{font-size:16px}
+.app-banner{height:calc(108px + var(--safe-top));padding-top:calc(24px + var(--safe-top))}
+.nav,.savebar,.sheet{width:min(100%,760px);max-width:none;left:50%;transform:translateX(-50%)}
+.nav{padding:8px 12px calc(8px + var(--safe-bottom));min-height:var(--nav-height)}
+.nav button{min-height:52px;font-size:11px}
+.savebar{bottom:var(--nav-height)}
+.main{padding-bottom:calc(104px + var(--safe-bottom))}
+.main.with-bar{padding-bottom:calc(184px + var(--safe-bottom))}
+.sheet{max-height:85dvh;padding-bottom:calc(22px + var(--safe-bottom))}
+.toast{bottom:calc(160px + var(--safe-bottom));max-width:calc(100vw - 32px);white-space:normal}
+@media(min-width:600px){
+ .login-layout{padding-inline:40px}
+ .crossing-hero{width:100%;max-width:540px;margin-inline:auto}
+ .app-banner{padding-inline:32px}
+ .main{padding-inline:32px}
+}
+
+.coast-label{bottom:0;font-size:9px;line-height:1.2}
+@media(max-width:360px){.coast-label{display:none}}

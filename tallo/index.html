@@ -151,13 +151,13 @@ table.cat-table td{padding:6px 0;font-size:13.5px;}
 .subhead h2{font-size:20px;}
 code{font-family:'IBM Plex Mono',monospace;background:var(--paper-dark);padding:1px 5px;border-radius:4px;}
 </style>
-<link rel="stylesheet" href="enoden.css"><link rel="stylesheet" href="daily.css">
+<link rel="stylesheet" href="enoden.css?v=responsive-20261119"><link rel="stylesheet" href="daily.css?v=responsive-20261119">
 </head>
 <body>
-<div id="phoneStage"><section class="phone-frame" aria-label="Tallo 江之電旅行帳本"><div class="phone-island" aria-hidden="true"></div><div class="phone-scroll" id="phoneScroll"><div id="app"></div></div></section></div>
+<div id="siteRoot"><section class="site-shell" aria-label="Tallo 江之電旅行帳本"><div class="site-scroll" id="phoneScroll"><div id="app"></div></div></section></div>
 
 <script type="module">
-import {mountDaily,leaveDaily} from "./daily-app.mjs";
+import {mountDaily,leaveDaily} from "./daily-app.mjs?v=responsive-20261119";
 
 /* ============================================================
    旅行分帳(App 版:登入 → 底部導覽列)
@@ -885,15 +885,7 @@ function passTrain(){
   render();
   trainTimer = setTimeout(() => { trainStarted = 0; if(state.screen === "login") render(); },6400);
 }
-function fitPhone(){
-  const scale = Math.min((window.innerWidth - 44) / 402, (window.innerHeight - 44) / 874, 1.15);
-  const safeScale = Math.max(.2, scale);
-  const stage = document.getElementById("phoneStage");
-  const frame = document.querySelector(".phone-frame");
-  if(stage){ stage.style.width = 402 * safeScale + "px"; stage.style.height = 874 * safeScale + "px"; }
-  if(frame) frame.style.transform = "scale(" + safeScale + ")";
-}
-window.addEventListener("resize",fitPhone);
+
 function renderLogin(){
   const f = state.form, signup = f.authMode === "signup", busy = authBusy || authSuccess;
   const elapsed = trainStarted ? Math.max(0,Date.now() - trainStarted) : 0;
@@ -1207,7 +1199,7 @@ function render(){
       if(gid && state.groups.some(g=>g.id===gid)) selectGroup(gid,null);
       state.tab=mode==='add'?'add':'me'; state.meSub=null;state.sheet=null;
       if(mode==='add')state.form={...state.form,amount:'',note:'',date:today()};render();
-    }}); } fitPhone(); return;
+    }}); }  return;
   }
 
   if(composing){ pendingRender = true; return; }
@@ -1249,7 +1241,7 @@ function render(){
     }
   }
   if(scroller && Math.abs(scroller.scrollTop - scrollY) > 1) scroller.scrollTop = scrollY;
-  fitPhone();
+  
   if(state.screen === "login" && !autoTrainScheduled){ autoTrainScheduled = true; setTimeout(() => { if(state.screen === "login") passTrain(); },900); }
 }
 document.addEventListener("compositionstart", () => { composing = true; });
