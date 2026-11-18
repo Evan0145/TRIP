@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#E7E2D2">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="旅行分帳">
-<title>旅行分帳</title>
+<meta name="apple-mobile-web-app-title" content="Tallo">
+<title>Tallo — 江之電篇</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
@@ -151,9 +151,10 @@ table.cat-table td{padding:6px 0;font-size:13.5px;}
 .subhead h2{font-size:20px;}
 code{font-family:'IBM Plex Mono',monospace;background:var(--paper-dark);padding:1px 5px;border-radius:4px;}
 </style>
+<link rel="stylesheet" href="enoden.css">
 </head>
 <body>
-<div id="app"></div>
+<div id="phoneStage"><section class="phone-frame" aria-label="Tallo 江之電旅行帳本"><div class="phone-island" aria-hidden="true"></div><div class="phone-scroll" id="phoneScroll"><div id="app"></div></div></section></div>
 
 <script type="module">
 /* ============================================================
@@ -208,7 +209,7 @@ const CATEGORIES = [
   { key:"TICKET", label:"門票", icon:"🎫" },
   { key:"OTHER", label:"其他", icon:"⋯" },
 ];
-const CAT_COLOR = { FOOD:"#B5432E", TRANSPORT:"#A8823D", HOTEL:"#3F6650", SHOPPING:"#6B4C8A", TICKET:"#2F6690", OTHER:"#8A8474" };
+const CAT_COLOR = { FOOD:"#D63A22", TRANSPORT:"#1F7A52", HOTEL:"#A8823D", SHOPPING:"#648D88", TICKET:"#1B7A9E", OTHER:"#8A8474" };
 const PERSON_COLORS = ["#B5432E","#A8823D","#3F6650","#6B4C8A","#2F6690","#8A8474"];
 const personColor = i => PERSON_COLORS[i % PERSON_COLORS.length];
 
@@ -402,7 +403,7 @@ function startAuth(){
     state.user = user;
     if(user){
       subscribeGroups(user.uid);
-      if(state.screen === "boot" || state.screen === "login") { state.screen = "app"; state.tab = "add"; }
+      if(!authTransition && (state.screen === "boot" || state.screen === "login")) { state.screen = "app"; state.tab = "add"; }
     } else {
       if(unsubGroups){ unsubGroups(); unsubGroups = null; }
       if(unsubTrips){ unsubTrips(); unsubTrips = null; }
@@ -412,20 +413,48 @@ function startAuth(){
     render();
   });
 }
-async function doLogin(){
-  const f = state.form;
-  try { await signInWithEmailAndPassword(auth, f.email.trim(), f.password); setFormSilent({password:""}); }
-  catch(e){ fail(e); }
-}
-async function doSignup(){
-  const f = state.form; const name = f.authName.trim();
-  if(!name){ setState({ error:"請輸入你的名字(旅伴會看到這個名字)" }); return; }
+let authBusy = false, authTransition = false, authSuccess = false, passwordVisible = false;
+async function authenticate(mode){
+  if(authBusy || authSuccess) return;
+  const f = state.form, email = f.email.trim(), name = f.authName.trim();
+  if(!/^[^ @]+@[^ @]+[.][^ @]+$/.test(email) || f.password.length < 6){
+    fail(new Error("請輸入有效的 Email 與至少 6 碼密碼")); return;
+  }
+  if(mode === "signup" && (!name || name.length > 80)){ fail(new Error("請輸入 1–80 字的名字")); return; }
+  authBusy = true; authTransition = true; state.error = ""; render();
   try {
-    const cred = await createUserWithEmailAndPassword(auth, f.email.trim(), f.password);
-    await updateProfile(cred.user, { displayName:name });
-    setFormSilent({password:""});
-    render();
-  } catch(e){ fail(e); }
+    const cred = mode === "signup"
+      ? await createUserWithEmailAndPassword(auth, email, f.password)
+      : await signInWithEmailAndPassword(auth, email, f.password);
+    if(mode === "signup"){
+      try { await updateProfile(cred.user, {displayName:name}); }
+      catch(profileError){ state.error = "帳號已建立並登入，姓名暫時未能儲存"; }
+    }
+    setFormSilent({password:""}); passwordVisible = false;
+    authSuccess = true; authBusy = false; passTrain(); render();
+    const delay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 200 : 3200;
+    setTimeout(() => {
+      authTransition = false; authSuccess = false;
+      if(auth.currentUser) setState({screen:"app",tab:"add",error:""});
+      else setState({screen:"login"});
+    }, delay);
+  } catch(e){
+    authBusy = false; authTransition = false; authSuccess = false;
+    fail(e);
+  }
+}
+async function doLogin(){ return authenticate("login"); }
+async function doSignup(){ return authenticate("signup"); }
+function setAuthMode(mode){
+  if(authBusy || authSuccess) return;
+  passwordVisible = false; setForm({authMode:mode}); clearError();
+}
+function togglePassword(){
+  passwordVisible = !passwordVisible;
+  const input = document.getElementById("authPassInput");
+  const button = document.getElementById("passwordToggle");
+  if(input) input.type = passwordVisible ? "text" : "password";
+  if(button){ button.textContent = passwordVisible ? "隱藏" : "顯示"; button.setAttribute("aria-pressed",String(passwordVisible)); }
 }
 function submitAuth(){ if(state.form.authMode === "signup") doSignup(); else doLogin(); }
 async function doGoogle(){ if(!GOOGLE_SIGN_IN_ENABLED){ fail(new Error("Google 登入尚未開放，請使用 Email 登入")); return; } try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch(e){ fail(e); } }
@@ -493,7 +522,7 @@ function pickTrip(id){
 }
 function openSheet(){ setState({ sheet:"switch" }); }
 function closeSheet(){ setState({ sheet:null }); }
-function goTab(k){ setState({ tab:k, meSub:null, expandedId:null, sheet:null }); window.scrollTo(0, 0); }
+function goTab(k){ setState({ tab:k, meSub:null, expandedId:null, sheet:null }); document.getElementById("phoneScroll")?.scrollTo(0,0); }
 
 /* ============================================================
    群組(建立、邀請碼加入)
@@ -839,33 +868,61 @@ function renderSetupNeeded(){
     <div class="perf2"></div><div class="ticket-bottom"><div class="notice info" style="margin:0;">
     ${loadError ? `<b style="color:#b3261e">無法載入 Firebase 程式庫(網路被擋或離線)。</b><br>請用手機/電腦的瀏覽器(Chrome、Safari)直接開啟檔案,不要在預覽視窗裡開。<br><small>${esc(loadError)}</small><br><br>` : ""}這個版本需要先設定 Firebase:<br><br>1. 啟用 Authentication 的「電子郵件/密碼」<br>2. 在 Firestore 規則貼上 firestore.rules<br>3. 把檔案開頭的 <code>firebaseConfig</code> 換成你專案的設定值,存檔後重新整理</div></div></div></div>`;
 }
-function renderLogin(){
-  const f = state.form; const signup = f.authMode === "signup";
-  let html = `<div class="login"><div class="ticket">
-    <div class="ticket-top"><div class="kicker">TRIP SPLIT</div><div class="brand">旅行分帳</div>
-    <div class="tag">跟旅伴一起記帳、自動算出誰該付誰多少。</div></div>
-    <div class="perf2"></div><div class="ticket-bottom">`;
-  if(state.error) html += `<div class="notice" style="display:flex;justify-content:space-between;gap:10px;"><span>${esc(state.error)}</span><span style="cursor:pointer;" onclick="clearError()">✕</span></div>`;
-  html += `<div class="tabs2"><button class="${signup?"":"on"}" onclick="setForm({authMode:'login'})">登入</button><button class="${signup?"on":""}" onclick="setForm({authMode:'signup'})">建立帳號</button></div>`;
-  if(signup) html += `<div class="field"><div class="field-label">你的名字(旅伴會看到,帳目也用這個名字)</div>
-    <input id="authNameInput" value="${esc(f.authName)}" placeholder="例如:小明" oninput="setFormSilent({authName:this.value})"></div>`;
-  html += `<div class="field"><div class="field-label">Email</div>
-    <input id="authEmailInput" type="email" autocomplete="email" value="${esc(f.email)}" placeholder="you@example.com" oninput="setFormSilent({email:this.value})"></div>`;
-  html += `<div class="field"><div class="field-label">密碼${signup?"(至少 6 個字元)":""}</div>
-    <input id="authPassInput" type="password" autocomplete="${signup?"new-password":"current-password"}" value="${esc(f.password)}" oninput="setFormSilent({password:this.value})" onkeydown="if(event.key==='Enter')submitAuth()"></div>`;
-  html += `<button class="btn primary full" onclick="submitAuth()">${signup?"建立帳號":"登入"}</button>`;
-  if(GOOGLE_SIGN_IN_ENABLED) html += `<div class="or">或</div><button class="btn ghost full" onclick="doGoogle()">用 Google 帳號登入</button>`;
-  html += `<div style="font-size:12px;opacity:.5;text-align:center;margin-top:16px;">登入後會保持登入狀態</div>`;
-  html += `</div></div></div>`;
-  return html;
+const TRAIN_SVG = "<svg viewBox=\"0 0 520 110\" role=\"img\" aria-label=\"綠色江之電列車\"><rect x=\"4\" y=\"12\" width=\"512\" height=\"72\" rx=\"16\" fill=\"#1F7A52\"/><path d=\"M20 12H500L490 7H30Z\" fill=\"#496354\"/><rect x=\"4\" y=\"42\" width=\"512\" height=\"18\" fill=\"#FFF3C4\"/><rect x=\"22\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#DFF6FF\"/><rect x=\"86\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#DFF6FF\"/><rect x=\"150\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#DFF6FF\"/><rect x=\"214\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#DFF6FF\"/><rect x=\"278\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#DFF6FF\"/><rect x=\"342\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#DFF6FF\"/><rect x=\"406\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#FFF8B0\"/><path d=\"M82 16V80M210 16V80M338 16V80M466 16V80\" stroke=\"#133f2e\" opacity=\".45\"/><rect x=\"110\" y=\"84\" width=\"300\" height=\"6\" rx=\"3\" fill=\"#333\"/><circle cx=\"42\" cy=\"92\" r=\"10\" fill=\"#222\"/><circle cx=\"478\" cy=\"92\" r=\"10\" fill=\"#222\"/><circle cx=\"42\" cy=\"92\" r=\"4\" fill=\"#777\"/><circle cx=\"478\" cy=\"92\" r=\"4\" fill=\"#777\"/><text x=\"250\" y=\"75\" text-anchor=\"middle\" font-size=\"10\" letter-spacing=\"3\" fill=\"#fff3c4\">ENODEN  300</text></svg>";
+let trainStarted = 0, trainTimer = null, autoTrainScheduled = false;
+function passTrain(){
+  if(trainStarted && Date.now() - trainStarted < 6400) return;
+  trainStarted = Date.now();
+  clearTimeout(trainTimer);
+  render();
+  trainTimer = setTimeout(() => { trainStarted = 0; if(state.screen === "login") render(); },6400);
 }
-
-/* ============================================================
-   畫面:頂部列 / 底部導覽 / 切換面板
-   ============================================================ */
+function fitPhone(){
+  const scale = Math.min((window.innerWidth - 44) / 402, (window.innerHeight - 44) / 874, 1.15);
+  const safeScale = Math.max(.2, scale);
+  const stage = document.getElementById("phoneStage");
+  const frame = document.querySelector(".phone-frame");
+  if(stage){ stage.style.width = 402 * safeScale + "px"; stage.style.height = 874 * safeScale + "px"; }
+  if(frame) frame.style.transform = "scale(" + safeScale + ")";
+}
+window.addEventListener("resize",fitPhone);
+function renderLogin(){
+  const f = state.form, signup = f.authMode === "signup", busy = authBusy || authSuccess;
+  const elapsed = trainStarted ? Math.max(0,Date.now() - trainStarted) : 0;
+  return `<div class="login enoden-login">
+    <div class="enoden-world" aria-hidden="true"><div class="enoden-cloud"></div><div class="enoden-cloud two"></div>
+      <div class="enoden-sea"><span class="coast-label">湘南海岸 ・ SHONAN COAST</span></div><div class="enoden-road"></div><div class="enoden-rail"></div></div>
+    <div class="enoden-train ${trainStarted ? "passing" : ""}" style="animation-delay:-${elapsed}ms" aria-hidden="true">${TRAIN_SVG}</div>
+    <div class="login-layout">
+      <header class="crossing-hero">
+        <div class="crossing-equipment" aria-hidden="true"><div class="crossing-signal"><i></i><i></i></div><div><div class="crossing-bar"></div><span class="crossing-sign">カン カン ・ 踏切</span></div></div>
+        <div class="crossing-copy"><h1>鎌倉高校前</h1><p>電車來之前，先停一下。</p><button class="train-trigger" onclick="passTrain()">🚃 讓電車通過一次</button></div>
+      </header>
+      <section class="enoden-card" aria-label="Tallo 登入">
+        <div class="login-brand"><div><h2>Tallo</h2><p>— 江之電篇 —</p></div><span class="ticket-number" aria-hidden="true">江ノ電<br>ENODEN</span></div>
+        ${state.error ? `<div class="notice row" role="alert"><span>${esc(state.error)}</span><button class="auth-error-close" aria-label="關閉錯誤提示" onclick="clearError()">×</button></div>` : ""}
+        <div class="tabs2" role="group" aria-label="登入模式">
+          <button class="${signup ? "" : "on"}" aria-pressed="${!signup}" onclick="setAuthMode('login')" ${busy ? "disabled" : ""}>登入</button>
+          <button class="${signup ? "on" : ""}" aria-pressed="${signup}" onclick="setAuthMode('signup')" ${busy ? "disabled" : ""}>建立帳號</button>
+        </div>
+        <form onsubmit="event.preventDefault();submitAuth()" aria-busy="${busy}">
+          ${signup ? `<div class="field"><label class="field-label" for="authNameInput">你的名字</label><input id="authNameInput" value="${esc(f.authName)}" placeholder="旅伴會看到的名字" autocomplete="nickname" maxlength="80" required oninput="setFormSilent({authName:this.value})" ${busy ? "disabled" : ""}></div>` : ""}
+          <div class="field"><label class="field-label" for="authEmailInput">Email</label><input id="authEmailInput" type="email" autocomplete="email" value="${esc(f.email)}" placeholder="you@example.com" required oninput="setFormSilent({email:this.value})" ${busy ? "disabled" : ""}></div>
+          <div class="field"><label class="field-label" for="authPassInput">密碼</label><div class="password-field"><input id="authPassInput" type="${passwordVisible ? "text" : "password"}" autocomplete="${signup ? "new-password" : "current-password"}" value="${esc(f.password)}" placeholder="至少 6 碼" minlength="6" required oninput="setFormSilent({password:this.value})" ${busy ? "disabled" : ""}><button id="passwordToggle" type="button" aria-label="切換密碼顯示" aria-pressed="${passwordVisible}" onclick="togglePassword()">${passwordVisible ? "隱藏" : "顯示"}</button></div></div>
+          <button class="btn auth-submit" type="submit" ${busy ? "disabled" : ""}>${authSuccess ? "柵欄放下中… 電車慢慢通過中" : authBusy ? "正在驗證帳號…" : signup ? "建立帳號" : "登入"}</button>
+        </form>
+        ${authSuccess ? '<div class="auth-success" role="status">✓ 電車通過了，歡迎回來！柵欄升起，可以進站了。</div>' : ""}
+        <p class="login-foot">登入後會保持登入狀態</p>
+      </section>
+    </div>
+  </div>`;
+}
+function renderAppBanner(){
+  return `<div class="app-banner"><div class="banner-brand">Tallo</div><div class="banner-route">江ノ電 ・ 旅の記録</div>${TRAIN_SVG}</div>`;
+}
 function renderTopbar(){
   const t = curTrip(), g = curGroup();
-  const title = t ? t.name : (g ? g.name : "旅行分帳");
+  const title = t ? t.name : (g ? g.name : "旅程帳本");
   const sub = t ? (g ? g.name : "") : (g ? "尚未選擇旅程" : "尚未加入群組");
   const pill = t ? `<span class="pill ${t.status === "進行中" ? "" : "end"}">${esc(t.status)}</span>` : "";
   return `<div class="topbar"><div class="tb-main" onclick="openSheet()"><div class="tb-title">${esc(title)}<span class="caret">▾</span></div>
@@ -1141,7 +1198,8 @@ function render(){
   const activeId = (active && active.id) ? active.id : null;
   const selStart = (active && typeof active.selectionStart === "number") ? active.selectionStart : null;
   const selEnd = (active && typeof active.selectionEnd === "number") ? active.selectionEnd : null;
-  const scrollY = window.scrollY;
+  const scroller = document.getElementById("phoneScroll");
+  const scrollY = scroller ? scroller.scrollTop : window.scrollY;
 
   let html = "";
   if(state.screen === "boot") html = loadingBlock("連線中…");
@@ -1158,7 +1216,7 @@ function render(){
     }
     const err = state.error ? `<div class="notice" style="display:flex;justify-content:space-between;gap:10px;"><span>${esc(state.error)}</span><span style="cursor:pointer;" onclick="clearError()">✕</span></div>` : "";
     const bar = renderSaveBar();
-    html = renderTopbar() + `<div class="main ${bar ? "with-bar" : ""}">${err}${body}</div>` + bar + renderNav() + renderSheet()
+    html = renderAppBanner() + renderTopbar() + `<div class="main ${bar ? "with-bar" : ""}">${err}${body}</div>` + bar + renderNav() + renderSheet()
       + (state.toast ? `<div class="toast">${esc(state.toast)}</div>` : "");
   }
   document.getElementById("app").innerHTML = html;
@@ -1173,7 +1231,9 @@ function render(){
       }
     }
   }
-  if(Math.abs(window.scrollY - scrollY) > 1) window.scrollTo(0, scrollY);
+  if(scroller && Math.abs(scroller.scrollTop - scrollY) > 1) scroller.scrollTop = scrollY;
+  fitPhone();
+  if(state.screen === "login" && !autoTrainScheduled){ autoTrainScheduled = true; setTimeout(() => { if(state.screen === "login") passTrain(); },900); }
 }
 document.addEventListener("compositionstart", () => { composing = true; });
 document.addEventListener("compositionend", () => {
@@ -1188,7 +1248,7 @@ function boot(){
 
 Object.assign(window, {
   setState, setForm, setFormSilent, clearError,
-  doLogin, doSignup, submitAuth, doGoogle, doLogout,
+  doLogin, doSignup, submitAuth, doGoogle, doLogout, setAuthMode, togglePassword, passTrain,
   createGroup, joinGroup, rotateInvite, copyCode, pickGroup, pickTrip, openSheet, closeSheet, goTab,
   openNewTrip, addTripMember, removeTripMember, createTrip, endTrip, reopenTrip, addMember,
   toggleExpand, deleteExpense, onAmount, onCustom, toggleParticipant, toggleAllParticipants, saveExpense,

@@ -8,7 +8,7 @@ const script = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
 const body = script.slice(script.indexOf('const CATEGORIES')).replace(/render\(\);\s*boot\(\);\s*$/, '');
 const api = vm.runInNewContext('let auth = null;\n' + body +
   '\n({jsArg, esc, chip, validateTripInput, validateExpenseInput, cleanExpense, uid});',
-  {window:{}, document:{addEventListener(){}}, crypto:webcrypto, setTimeout, clearTimeout});
+  {window:{addEventListener(){}}, document:{addEventListener(){}}, crypto:webcrypto, setTimeout, clearTimeout});
 const decode = s => s.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 for(const value of ["O'Brien","'});globalThis.injected=true;//","\\');alert(1);//","\" autofocus onfocus=\"alert(1)","<img src=x onerror=alert(1)>","&quot;"]){
   test('dynamic handler safely preserves ' + JSON.stringify(value), () => {
