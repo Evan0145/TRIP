@@ -1,0 +1,125 @@
+
+/* Tallo — 江之電篇 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=Noto+Serif+TC:wght@600;700;900&display=swap');
+:root{--ink:#17251F;--paper:#FFF3C4;--paper-dark:#EEEBDD;--paper-soft:#FFFEF8;--stamp:#D63A22;--brass:#1F7A52;--good:#1F7A52;--line:#D9D2BC;--hair:#E6DFC8;--yellow:#FFC91A}
+*{box-sizing:border-box}
+html,body{height:100%;background:#E7E2D2;font-family:'Noto Sans TC',system-ui,sans-serif;color:var(--ink)}
+body{display:grid;place-items:center;padding:20px;overflow:hidden}
+button,input,select,textarea{font-family:inherit}
+button{min-height:44px}
+button:focus-visible,[tabindex]:focus-visible{outline:3px solid #1B7A9E;outline-offset:3px}
+input:focus-visible,textarea:focus-visible{outline:2px solid #1B7A9E;outline-offset:2px}
+#phoneStage{position:relative;flex:none}
+.phone-frame{position:absolute;top:0;left:0;width:402px;height:874px;background:#BFE6F2;border-radius:54px;outline:10px solid #141414;box-shadow:0 0 0 12px #434343,0 34px 80px #17251F4d;transform-origin:top left;overflow:hidden;isolation:isolate}
+.phone-island{position:absolute;top:11px;left:145px;width:112px;height:30px;background:#111;border-radius:999px;z-index:60;pointer-events:none}
+.phone-scroll{height:100%;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;overscroll-behavior:contain}
+.phone-scroll::-webkit-scrollbar{display:none}
+#app{max-width:none;min-height:874px;background:#F5F1E5}
+h1,h2,h3,.card-title,.tb-title{font-family:'Noto Serif TC',serif}
+.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.login{padding:0;display:block;min-height:874px}
+.enoden-login{position:relative;min-height:874px;background:#D9CFC0;overflow:hidden}
+.enoden-world{position:absolute;inset:0;pointer-events:none;background:linear-gradient(#7EC8E6 0%,#CDEFF7 26%,#FFEFC2 26.2%,#FFEFC2 44%,#D9CFC0 44%)}
+.enoden-sea{position:absolute;top:96px;left:0;right:0;height:132px;background:linear-gradient(#1B7A9E,#3AA6C2);border-top:1px solid #f7fcff80;overflow:hidden}
+.enoden-sea:before,.enoden-sea:after{content:"";position:absolute;width:180%;height:14px;border-top:1px solid #dff6ff80;border-radius:50%;left:-30%;top:55px;transform:rotate(-4deg)}
+.enoden-sea:after{top:98px;left:-20%;opacity:.6}
+.coast-label{position:absolute;right:16px;bottom:5px;color:#fff;font-size:11px;font-weight:700;letter-spacing:.2em;opacity:.9}
+.enoden-cloud{position:absolute;top:52px;left:8%;width:110px;height:28px;background:#fff;border-radius:99px;opacity:.9;animation:cloud-drift 14s linear infinite alternate}
+.enoden-cloud:before{content:"";position:absolute;left:28px;top:-12px;width:38px;height:38px;border-radius:50%;background:#fff}
+.enoden-cloud.two{left:68%;top:81px;width:70px;height:20px;animation-delay:-6s}
+.enoden-cloud.two:before{width:24px;height:24px;top:-8px;left:17px}
+.enoden-road{position:absolute;top:385px;bottom:0;left:0;right:0;background:#D9CFC0}
+.enoden-road:after{content:"";position:absolute;top:108px;left:0;right:0;height:10px;background:repeating-linear-gradient(90deg,#fff 0 28px,transparent 28px 52px)}
+.enoden-rail{position:absolute;top:402px;left:0;right:0;height:18px;z-index:2;background:repeating-linear-gradient(90deg,#6B4A2F 0 12px,transparent 12px 25px);border-top:4px solid #444;border-bottom:4px solid #444;box-shadow:0 2px #ffffff80}
+.enoden-train{position:absolute;top:325px;left:-100%;width:94%;height:auto;z-index:8;pointer-events:none;filter:drop-shadow(0 5px 2px #17251f30)}
+.enoden-train.passing{animation:train-pass 6s cubic-bezier(.25,.6,.35,1) both}
+.login-layout{position:relative;z-index:5;min-height:874px;padding:54px 22px 26px;display:flex;flex-direction:column;gap:18px}
+.crossing-hero{min-height:355px;position:relative;padding-top:115px}
+.crossing-equipment{height:86px;display:flex;align-items:flex-end;gap:12px;position:absolute;left:0;right:0;top:110px}
+.crossing-signal{position:relative;flex:none;width:54px;height:86px;border:3px solid var(--yellow);background:#222;border-radius:8px;box-shadow:0 3px 0 #17251f22}
+.crossing-signal:after{content:"";position:absolute;top:83px;left:21px;width:7px;height:26px;background:repeating-linear-gradient(#111 0 8px,#FFC91A 8px 16px)}
+.crossing-signal i{position:absolute;top:12px;left:6px;width:18px;height:18px;border-radius:50%;background:#3A0A08;animation:signal-left .7s step-end infinite}
+.crossing-signal i+i{left:auto;right:6px;animation-name:signal-right}
+.crossing-equipment>div:last-child{flex:1;padding-bottom:4px}
+.crossing-bar{height:14px;border-radius:99px;background:repeating-linear-gradient(45deg,#FFC91A 0 16px,#111 16px 32px)}
+.crossing-sign{display:inline-block;margin-top:8px;padding:4px 8px;border-radius:6px;color:#FFC91A;background:#111;font-size:12px;font-weight:900;letter-spacing:.15em}
+.crossing-copy{position:absolute;top:218px;left:0;right:0;color:#0F3550}
+.crossing-copy h1{font-family:'Noto Serif TC',serif;font-size:46px;font-weight:900;line-height:1.02;letter-spacing:-.04em;margin:0 0 16px;white-space:nowrap}
+.crossing-copy p{color:#23465E;line-height:1.7;margin:0 0 12px;font-size:14px}
+.train-trigger{background:#fffef8d9;border:1px solid #d9d2bc;border-radius:999px;padding:7px 14px;color:#23465E;font-size:12px;font-weight:700;min-height:36px}
+.enoden-card{margin-top:auto;width:100%;padding:22px;background:#FFFEF8;border:1px solid #E6DFC8;border-radius:22px;box-shadow:0 20px 40px #14322838}
+.login-brand{display:flex;align-items:center;justify-content:space-between;margin-bottom:17px}
+.login-brand h2{font-size:26px;font-weight:900;letter-spacing:-.04em}
+.login-brand p{font-size:12px;color:#718078;margin:3px 0 0;letter-spacing:.08em}
+.ticket-number{font-size:10px;color:#1f7a52;letter-spacing:.1em;border:1px solid #b3cbb9;border-radius:4px;padding:5px 7px;line-height:1.8;text-align:center;transform:rotate(-5deg)}
+.tabs2{border-radius:999px;padding:4px;background:#EEEBDD;margin-bottom:16px}
+.tabs2 button{border-radius:999px;font-weight:700;min-height:38px;padding:7px}
+.tabs2 button.on{box-shadow:0 2px 10px #0000001f;color:#17251F}
+.enoden-card .field{margin-bottom:12px}
+.enoden-card .field-label{font-size:12px;font-weight:700;letter-spacing:.06em;color:#6B7A6F;opacity:1;margin:0 0 6px}
+.enoden-card input{border:1.5px solid #D9D2BC;border-radius:12px;padding:12px;font-size:15px}
+.password-field{display:flex;align-items:center;border:1.5px solid #D9D2BC;border-radius:12px;background:#fff;overflow:hidden}
+.password-field input{border:0;border-radius:0;min-width:0}
+.password-field button{background:#fff;border:0;padding:0 12px;color:#1F7A52;font-size:12px;font-weight:700;min-width:52px}
+.enoden-card .auth-submit{width:100%;margin-top:4px;border-radius:12px;background:#D63A22;color:#fff;font-size:16px;font-weight:900}
+.login-foot{font-size:11px;line-height:1.6;color:#718078;text-align:center;margin:14px 0 0}
+.auth-success{border:1px solid #8FD0A6;background:#E6F4EA;color:#14532D;border-radius:10px;padding:10px;margin-top:12px;font-size:13px;font-weight:700;line-height:1.6;text-align:center}
+.notice{background:#FFF0EE;border:1px solid #FFC4BC;color:#8B1E14;border-radius:10px;font-size:13px;line-height:1.6}
+.notice.info{color:#23465E;background:#eaf5f6;border-color:#bedadd}
+.auth-error-close{min-height:32px;min-width:24px;padding:0;border:0;background:none;color:inherit;font-size:20px}
+.app-banner{height:130px;padding:53px 22px 12px;background:linear-gradient(145deg,#CDEFF7,#7EC8E6);position:relative;overflow:hidden;border-bottom:5px solid #1F7A52}
+.app-banner:after{content:"";position:absolute;left:0;right:0;bottom:0;height:24px;background:linear-gradient(#1B7A9E,#3AA6C2)}
+.banner-brand{font-family:'Noto Serif TC',serif;font-weight:900;color:#0F3550;font-size:23px;letter-spacing:.08em}
+.banner-route{font-size:10px;color:#23465E;letter-spacing:.18em;margin-top:3px}
+.app-banner svg{position:absolute;right:16px;bottom:8px;width:135px;z-index:1;transform:rotate(-2deg)}
+.topbar{background:#FFFEF8f5;border-bottom:1px solid #E6DFC8;padding:15px 20px 13px}
+.tb-title{font-size:19px;color:#17251F;font-weight:700}
+.tb-sub{font-size:11px;color:#6B7A6F;opacity:1;margin-top:4px}
+.tb-main{max-width:280px}
+.main{padding:20px 20px 100px}
+.section-label{font-weight:700;font-size:11px;letter-spacing:.1em;opacity:1;color:#6B7A6F}
+.card{background:#FFFEF8;border:1px solid #E6DFC8;box-shadow:0 3px 10px #17251f04;border-radius:18px;padding:16px}
+.card.cur{border:1.5px solid #1F7A52;background:#EDF4E9}
+.card-title{font-size:17px;line-height:1.6}
+.card-sub{opacity:1;color:#718078;line-height:1.6}
+.btn{border-radius:12px;font-weight:700}
+.btn.primary{background:#D63A22}.btn.brass{background:#1F7A52}.btn.default{background:#EEEBDD}.btn.ghost{background:#FFFEF8;border:1px solid #D9D2BC}.btn.danger{background:#fff6f1}
+.amount-card{position:relative;background:#FFF3C4;border:1px solid #E6DFC8;border-radius:18px;padding:18px;margin-bottom:20px}
+.amount-card:before{content:"乗車券 / EXPENSE";display:block;font-size:9px;letter-spacing:.18em;color:#887941;margin-bottom:12px}
+.amount-card .lbl{font-size:11px;font-weight:700;color:#6B7A6F}
+.amount-row input{font-size:40px}
+.cat-grid{gap:9px}
+.cat{background:#FFFEF8;border:1px solid #D9D2BC;border-radius:14px;padding:13px 4px;gap:6px}
+.cat.on{color:#1F7A52;background:#EDF4E9;border:1.5px solid #1F7A52}
+.chip{min-height:38px;background:#FFFEF8;border:1px solid #D9D2BC;font-size:13px}
+.chip.selected{background:#1F7A52;border-color:#1F7A52}
+.chip.fixed{background:#EEEBDD}
+.seg{border-radius:999px}.seg button{border-radius:999px;min-height:38px;font-weight:700}
+.nav{background:#FFFEF8fa;border-top:1px solid #E6DFC8;padding:8px 8px 14px;max-width:402px}
+.nav button{opacity:1;color:#718078;font-size:10px;gap:5px;border-radius:14px;padding:8px 0}
+.nav button.active{background:#edf4e9;color:#1F7A52}
+.nav button svg{width:22px;height:22px}
+.savebar{bottom:79px;padding:12px 20px 8px;background:linear-gradient(#f5f1e500,#F5F1E5 36%);max-width:402px}
+.toast{bottom:155px;max-width:350px;width:max-content}
+.sheet{background:#FFFEF8;border:1px solid #E6DFC8;max-width:402px}
+.exp{background:#FFFEF8;border:1px solid #E6DFC8;border-radius:15px;margin:7px 0;padding:13px}
+.exp-ic{background:#FFF3C4;border-radius:12px}
+.exp-note{font-size:14px}.exp-meta{font-size:11px;line-height:1.6}
+.exp-detail{margin-left:0;padding-top:10px;border-top:1px dashed #D9D2BC}
+.day{opacity:1;color:#718078;font-size:11px;margin-top:22px}
+.summary{padding:18px 0 20px;border-bottom:2px dashed #D9D2BC}
+.big{font-size:29px;color:#1F7A52}
+.pie:after{background:#F5F1E5}
+.net-row{padding:16px 0}.txn{background:#FFFEF8;border:1px solid #E6DFC8;border-radius:15px}
+.invite{background:#FFF3C4;border:1px dashed #B8AA79}
+.empty{padding:36px 6px}.empty .t{font-family:'Noto Serif TC',serif;color:#1F7A52;font-weight:700}.empty .d{color:#718078;opacity:1;font-size:13px;line-height:1.9}
+@keyframes cloud-drift{from{transform:translateX(-20px)}to{transform:translateX(30px)}}
+@keyframes signal-left{0%,49%{background:#FF2D20;box-shadow:0 0 18px #FF2D20}50%,100%{background:#3A0A08;box-shadow:none}}
+@keyframes signal-right{0%,49%{background:#3A0A08;box-shadow:none}50%,100%{background:#FF2D20;box-shadow:0 0 18px #FF2D20}}
+@keyframes train-pass{from{left:-100%}to{left:104%}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.enoden-train.passing{left:104%}.crossing-signal i{background:#FF2D20}}
+
+/* Reserve a clear rail corridor between the scene copy and the login card. */
+.crossing-equipment{top:90px}.crossing-copy{top:180px}.crossing-copy h1{margin-bottom:8px}.crossing-copy p{margin-bottom:6px}.enoden-rail{top:443px}.enoden-train{top:366px}.crossing-hero{min-height:390px}.login-brand{margin-bottom:12px}.login-brand h2{font-size:22px}.enoden-card .field{margin-bottom:10px}.enoden-card .field-label{display:block}.enoden-card .tabs2{margin-bottom:12px}.login-foot{margin-top:10px}
+
+.crossing-signal:after{height:8px}.coast-label{bottom:54px}

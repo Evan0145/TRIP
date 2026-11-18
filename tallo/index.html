@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#E7E2D2">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="旅行分帳">
-<title>旅行分帳</title>
+<meta name="apple-mobile-web-app-title" content="Tallo">
+<title>Tallo — 江之電篇</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 :root{
@@ -151,11 +151,14 @@ table.cat-table td{padding:6px 0;font-size:13.5px;}
 .subhead h2{font-size:20px;}
 code{font-family:'IBM Plex Mono',monospace;background:var(--paper-dark);padding:1px 5px;border-radius:4px;}
 </style>
+<link rel="stylesheet" href="enoden.css"><link rel="stylesheet" href="daily.css">
 </head>
 <body>
-<div id="app"></div>
+<div id="phoneStage"><section class="phone-frame" aria-label="Tallo 江之電旅行帳本"><div class="phone-island" aria-hidden="true"></div><div class="phone-scroll" id="phoneScroll"><div id="app"></div></div></section></div>
 
 <script type="module">
+import {mountDaily,leaveDaily} from "./daily-app.mjs";
+
 /* ============================================================
    旅行分帳(App 版:登入 → 底部導覽列)
    一次性設定:
@@ -164,9 +167,11 @@ code{font-family:'IBM Plex Mono',monospace;background:var(--paper-dark);padding:
    3. 把下面 firebaseConfig 換成你專案的設定值
    ============================================================ */
 const FB = "https://www.gstatic.com/firebasejs/10.12.2/";
+// Enable only after the provider and authorized domain have been configured in Firebase.
+const GOOGLE_SIGN_IN_ENABLED = false;
 let loadError = null;
 let initializeApp, getFirestore, doc, collection, query, where, onSnapshot, getDoc, setDoc, updateDoc,
-  arrayUnion, arrayRemove, writeBatch, getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+  deleteDoc, arrayUnion, arrayRemove, writeBatch, getAuth, onAuthStateChanged, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, updateProfile, signOut, GoogleAuthProvider, signInWithPopup,
   setPersistence, browserLocalPersistence;
 try {
@@ -174,7 +179,7 @@ try {
     import(FB + "firebase-app.js"), import(FB + "firebase-firestore.js"), import(FB + "firebase-auth.js")
   ]);
   ({ initializeApp } = m1);
-  ({ getFirestore, doc, collection, query, where, onSnapshot, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, writeBatch } = m2);
+  ({ getFirestore, doc, collection, query, where, onSnapshot, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, writeBatch } = m2);
   ({ getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence } = m3);
 } catch (e) { loadError = String(e && e.message || e); }
 
@@ -206,7 +211,7 @@ const CATEGORIES = [
   { key:"TICKET", label:"門票", icon:"🎫" },
   { key:"OTHER", label:"其他", icon:"⋯" },
 ];
-const CAT_COLOR = { FOOD:"#B5432E", TRANSPORT:"#A8823D", HOTEL:"#3F6650", SHOPPING:"#6B4C8A", TICKET:"#2F6690", OTHER:"#8A8474" };
+const CAT_COLOR = { FOOD:"#D63A22", TRANSPORT:"#1F7A52", HOTEL:"#A8823D", SHOPPING:"#648D88", TICKET:"#1B7A9E", OTHER:"#8A8474" };
 const PERSON_COLORS = ["#B5432E","#A8823D","#3F6650","#6B4C8A","#2F6690","#8A8474"];
 const personColor = i => PERSON_COLORS[i % PERSON_COLORS.length];
 
@@ -223,8 +228,8 @@ function today(){
   const d = new Date(), p = n => String(n).padStart(2, "0");
   return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
 }
-function uid(p){ return p + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function fmt(n){ const v = Math.round((n+Number.EPSILON)*10)/10; return v.toLocaleString("zh-TW",{maximumFractionDigits:1}); }
+function uid(p){ return p + crypto.randomUUID().replace(/-/g, ""); }
+function fmt(n){ const v = Math.round((n+Number.EPSILON)*100)/100; return v.toLocaleString("zh-TW",{maximumFractionDigits:2}); }
 function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function sanitizeAmount(v){
   let s = v.replace(/[^0-9.]/g, "");
@@ -238,6 +243,30 @@ function genCode(){
   let s = ""; for(let i=0;i<8;i++) s += a[r[i] % a.length];
   return s;
 }
+// JSON string literal encoded for an HTML attribute; entity escaping alone is not JS escaping.
+function jsArg(value){ return esc(JSON.stringify(String(value))); }
+function validateTripInput(t){
+  if(typeof t.name !== "string" || !t.name.trim() || t.name.length > 100) throw new Error("旅程名稱需為 1–100 字");
+  if(!["進行中", "已結束"].includes(t.status)) throw new Error("旅程狀態不正確");
+  if(!Array.isArray(t.members) || !t.members.length || t.members.length > 20 ||
+    new Set(t.members).size !== t.members.length ||
+    !t.members.every(n => typeof n === "string" && n.trim() && n.length <= 80)) throw new Error("旅伴需為 1–20 位不重複姓名（每位最多 80 字）");
+}
+function cleanExpense(e, id = e.id){
+  return {id, date:e.date, amount:e.amount, category:e.category, note:e.note || "", payer:e.payer,
+    shares:Object.fromEntries((e.participants || []).map(p => [p.name, p.amount]))};
+}
+function validateExpenseInput(e, members){
+  if(!Number.isFinite(e.amount) || e.amount <= 0 || e.amount > 10000000) throw new Error("金額需介於 0 與一千萬元之間");
+  if(typeof e.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(e.date) || !CATEGORIES.some(c => c.key === e.category)) throw new Error("日期或分類不正確");
+  if(typeof e.note !== "string" || e.note.length > 500 || !members.includes(e.payer)) throw new Error("備註或付款人不正確");
+  const ps = e.participants;
+  if(!Array.isArray(ps) || !ps.length || ps.length > 20 ||
+    new Set(ps.map(p => p.name)).size !== ps.length ||
+    !ps.every(p => members.includes(p.name) && Number.isFinite(p.amount) && p.amount >= 0 && p.amount <= 10000000) ||
+    Math.abs(ps.reduce((n,p) => n + p.amount, 0) - e.amount) >= 0.05) throw new Error("分攤金額或分攤人不正確");
+}
+
 function myName(){
   const u = auth && auth.currentUser;
   if(!u) return "我";
@@ -262,7 +291,7 @@ function errMsg(e){
     "auth/popup-blocked":"瀏覽器擋住了登入視窗,請允許彈出視窗後再試",
     "auth/popup-closed-by-user":"已取消登入",
     "auth/unauthorized-domain":"這個網址還沒加入 Firebase 的「授權網域」(Authentication → 設定)",
-    "auth/operation-not-allowed":"尚未在 Firebase 啟用這種登入方式",
+    "auth/operation-not-allowed":"此登入方式尚未啟用。請管理者在 Firebase 專案 tallo-a966e → Authentication → Sign-in method 啟用電子郵件／密碼或 Google",
     "auth/too-many-requests":"嘗試次數過多,請稍後再試",
     "auth/network-request-failed":"網路連線失敗",
     "permission-denied":"沒有權限:請確認 Firestore 規則已發布,且你是這個群組的成員"
@@ -288,13 +317,13 @@ function simplifyDebts(net){
   return txns;
 }
 function calc(t){
-  const paid = {}, owed = {};
+  const paid = Object.create(null), owed = Object.create(null);
   t.members.forEach(m => { paid[m] = 0; owed[m] = 0; });
   (t.expenses||[]).forEach(e => {
     paid[e.payer] = (paid[e.payer]||0) + e.amount;
     (e.participants||[]).forEach(p => { owed[p.name] = (owed[p.name]||0) + p.amount; });
   });
-  const net = {};
+  const net = Object.create(null);
   Object.keys({...paid, ...owed}).forEach(m => { net[m] = (paid[m]||0) - (owed[m]||0); });
   const grand = (t.expenses||[]).reduce((s,e) => s + e.amount, 0);
   return { paid, owed, net, grand, txns: simplifyDebts(net) };
@@ -304,6 +333,30 @@ function calc(t){
    狀態
    ============================================================ */
 let unsubGroups = null, unsubTrips = null;
+const expenseSubscriptions = new Map(), expenseCache = new Map();
+function stopExpenses(){
+  for(const unsub of expenseSubscriptions.values()) unsub();
+  expenseSubscriptions.clear(); expenseCache.clear();
+}
+function watchExpenses(gid, trips){
+  const ids = new Set(trips.map(t => t.id));
+  for(const [id, unsub] of expenseSubscriptions){
+    if(!ids.has(id)){ unsub(); expenseSubscriptions.delete(id); expenseCache.delete(id); }
+  }
+  for(const t of trips){
+    if(expenseSubscriptions.has(t.id)) continue;
+    expenseSubscriptions.set(t.id, onSnapshot(collection(db, "groups", gid, "trips", t.id, "expenses"), snap => {
+      if(state.groupId !== gid) return;
+      const docs = snap.docs.map(d => {
+        const {shares, ...data} = d.data();
+        return {...data, participants:Object.entries(shares || {}).map(([name, amount]) => ({name, amount})), id:d.id, _doc:true};
+      });
+      expenseCache.set(t.id, docs);
+      state.trips = state.trips.map(x => x.id === t.id ? {...x, expenses:[...(x.expenses || []).filter(e => !e._doc), ...docs]} : x);
+      render();
+    }, fail));
+  }
+}
 let composing = false, pendingRender = false, toastTimer = null;
 
 let state = {
@@ -350,35 +403,65 @@ function startAuth(){
   try { setPersistence(auth, browserLocalPersistence).catch(()=>{}); } catch(e){}
   onAuthStateChanged(auth, (user) => {
     state.user = user;
+    if(!user) leaveDaily();
     if(user){
       subscribeGroups(user.uid);
-      if(state.screen === "boot" || state.screen === "login") { state.screen = "app"; state.tab = "add"; }
+      if(!authTransition && (state.screen === "boot" || state.screen === "login")) { state.screen = "app"; state.tab = "daily"; }
     } else {
       if(unsubGroups){ unsubGroups(); unsubGroups = null; }
       if(unsubTrips){ unsubTrips(); unsubTrips = null; }
+      stopExpenses();
       state = {...state, screen:"login", groups:[], groupId:null, trips:[], tripId:null, groupsLoaded:false, tripsLoaded:false, sheet:null, meSub:null, tab:"add"};
     }
     render();
   });
 }
-async function doLogin(){
-  const f = state.form;
-  try { await signInWithEmailAndPassword(auth, f.email.trim(), f.password); setFormSilent({password:""}); }
-  catch(e){ fail(e); }
-}
-async function doSignup(){
-  const f = state.form; const name = f.authName.trim();
-  if(!name){ setState({ error:"請輸入你的名字(旅伴會看到這個名字)" }); return; }
+let authBusy = false, authTransition = false, authSuccess = false, passwordVisible = false;
+async function authenticate(mode){
+  if(authBusy || authSuccess) return;
+  const f = state.form, email = f.email.trim(), name = f.authName.trim();
+  if(!/^[^ @]+@[^ @]+[.][^ @]+$/.test(email) || f.password.length < 6){
+    fail(new Error("請輸入有效的 Email 與至少 6 碼密碼")); return;
+  }
+  if(mode === "signup" && (!name || name.length > 80)){ fail(new Error("請輸入 1–80 字的名字")); return; }
+  authBusy = true; authTransition = true; state.error = ""; render();
   try {
-    const cred = await createUserWithEmailAndPassword(auth, f.email.trim(), f.password);
-    await updateProfile(cred.user, { displayName:name });
-    setFormSilent({password:""});
-    render();
-  } catch(e){ fail(e); }
+    const cred = mode === "signup"
+      ? await createUserWithEmailAndPassword(auth, email, f.password)
+      : await signInWithEmailAndPassword(auth, email, f.password);
+    if(mode === "signup"){
+      try { await updateProfile(cred.user, {displayName:name}); }
+      catch(profileError){ state.error = "帳號已建立並登入，姓名暫時未能儲存"; }
+    }
+    setFormSilent({password:""}); passwordVisible = false;
+    authSuccess = true; authBusy = false; passTrain(); render();
+    const delay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 200 : 3200;
+    setTimeout(() => {
+      authTransition = false; authSuccess = false;
+      if(auth.currentUser) setState({screen:"app",tab:"daily",error:""});
+      else setState({screen:"login"});
+    }, delay);
+  } catch(e){
+    authBusy = false; authTransition = false; authSuccess = false;
+    fail(e);
+  }
+}
+async function doLogin(){ return authenticate("login"); }
+async function doSignup(){ return authenticate("signup"); }
+function setAuthMode(mode){
+  if(authBusy || authSuccess) return;
+  passwordVisible = false; setForm({authMode:mode}); clearError();
+}
+function togglePassword(){
+  passwordVisible = !passwordVisible;
+  const input = document.getElementById("authPassInput");
+  const button = document.getElementById("passwordToggle");
+  if(input) input.type = passwordVisible ? "text" : "password";
+  if(button){ button.textContent = passwordVisible ? "隱藏" : "顯示"; button.setAttribute("aria-pressed",String(passwordVisible)); }
 }
 function submitAuth(){ if(state.form.authMode === "signup") doSignup(); else doLogin(); }
-async function doGoogle(){ try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch(e){ fail(e); } }
-function doLogout(){ if(confirm("確定要登出嗎?")) signOut(auth).catch(fail); }
+async function doGoogle(){ if(!GOOGLE_SIGN_IN_ENABLED){ fail(new Error("Google 登入尚未開放，請使用 Email 登入")); return; } try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch(e){ fail(e); } }
+function doLogout(){ signOut(auth).catch(fail); }
 
 /* ============================================================
    群組與旅程的選取(會記住上次用的群組/旅程)
@@ -387,8 +470,10 @@ function subscribeGroups(uidv){
   if(unsubGroups) unsubGroups();
   unsubGroups = onSnapshot(
     query(collection(db, "groups"), where("memberUids", "array-contains", uidv)),
+    {includeMetadataChanges:true},
     (snap) => {
-      state.groups = snap.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+      if(snap.metadata.hasPendingWrites)return;
+      state.groups = snap.docs.map(d => ({ ...d.data(), id:d.id })).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
       state.groupsLoaded = true;
       const want = state.wantGroup && state.groups.find(g => g.id === state.wantGroup);
       if(want){ state.wantGroup = null; selectGroup(want.id, null); return; }
@@ -401,6 +486,7 @@ function subscribeGroups(uidv){
         }
       } else if(state.groupId){
         if(unsubTrips){ unsubTrips(); unsubTrips = null; }
+      stopExpenses();
         state.groupId = null; state.trips = []; state.tripId = null;
       }
       render();
@@ -410,12 +496,16 @@ function subscribeGroups(uidv){
 }
 function selectGroup(gid, preferTrip){
   if(unsubTrips){ unsubTrips(); unsubTrips = null; }
+      stopExpenses();
   state.groupId = gid; state.trips = []; state.tripId = null; state.tripsLoaded = false;
   state.pendingTrip = preferTrip || null; state.justCreated = null;
   unsubTrips = onSnapshot(
     collection(db, "groups", gid, "trips"),
+    {includeMetadataChanges:true},
     (snap) => {
-      state.trips = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+      if(snap.metadata.hasPendingWrites)return;
+      state.trips = snap.docs.map(d => ({ ...d.data(), id:d.id, expenses:[...(d.data().expenses || []), ...(expenseCache.get(d.id) || [])] }));
+      watchExpenses(gid, state.trips);
       state.tripsLoaded = true;
       const cur = state.trips.find(t => t.id === state.tripId);
       if(cur){ if(state.justCreated === cur.id) state.justCreated = null; }
@@ -439,46 +529,60 @@ function pickTrip(id){
 }
 function openSheet(){ setState({ sheet:"switch" }); }
 function closeSheet(){ setState({ sheet:null }); }
-function goTab(k){ setState({ tab:k, meSub:null, expandedId:null, sheet:null }); window.scrollTo(0, 0); }
+function goTab(k){ setState({ tab:k, meSub:null, expandedId:null, sheet:null }); document.getElementById("phoneScroll")?.scrollTo(0,0); }
 
 /* ============================================================
    群組(建立、邀請碼加入)
    ============================================================ */
 async function createGroup(){
+  state.error="";
   const name = state.form.groupName.trim();
   if(!name) return;
   const u = auth.currentUser;
-  const gid = uid("G"), code = genCode();
+  const gid = uid("G"), code = genCode(), expiresAt = Date.now() + 7 * 86400000;
   try {
     state.wantGroup = gid;
     const batch = writeBatch(db);
     batch.set(doc(db, "groups", gid), {
       name, ownerUid:u.uid, memberUids:[u.uid], memberNames:{ [u.uid]: myName() },
-      inviteCode:code, createdAt:Date.now()
+      inviteCode:code, inviteExpiresAt:expiresAt, createdAt:Date.now()
     });
-    batch.set(doc(db, "invites", code), { groupId:gid, groupName:name });
+    batch.set(doc(db, "invites", code), { groupId:gid, ownerUid:u.uid, expiresAt });
     await batch.commit();
     setForm({ groupName:"" });
     toast("已建立群組");
   } catch(e){ state.wantGroup = null; fail(e); }
 }
 async function joinGroup(){
+  state.error="";
   const code = state.form.joinCode.trim().toUpperCase();
   if(!code) return;
   const u = auth.currentUser;
   try {
     const snap = await getDoc(doc(db, "invites", code));
     if(!snap.exists()){ setState({ error:"找不到這組邀請碼,請再確認一次" }); return; }
+    if(!Number.isFinite(snap.data().expiresAt) || snap.data().expiresAt <= Date.now()) throw new Error("邀請碼已過期，請群組擁有者更新邀請碼");
     const gid = snap.data().groupId;
     if(state.groups.find(g => g.id === gid)){ setForm({ joinCode:"" }); pickGroup(gid); return; }
     state.wantGroup = gid;
     await updateDoc(doc(db, "groups", gid), {
-      memberUids: arrayUnion(u.uid),
+      memberUids: arrayUnion(u.uid), joinCode:code,
       ["memberNames." + u.uid]: myName()
     });
     setForm({ joinCode:"" });
     toast("已加入群組");
   } catch(e){ state.wantGroup = null; fail(e); }
+}
+async function rotateInvite(){
+  const g = curGroup(), u = auth.currentUser;
+  if(!g || !u || g.ownerUid !== u.uid) return;
+  const code = genCode(), expiresAt = Date.now() + 7 * 86400000;
+  try {
+    const batch = writeBatch(db);
+    batch.update(doc(db, "groups", g.id), {inviteCode:code, inviteExpiresAt:expiresAt});
+    batch.set(doc(db, "invites", code), {groupId:g.id, ownerUid:u.uid, expiresAt});
+    await batch.commit(); toast("邀請碼已更新，有效期限七天；舊碼已失效");
+  } catch(e){ fail(e); }
 }
 function copyCode(code){
   try {
@@ -495,30 +599,34 @@ function openNewTrip(){
   setState({ tab:"me", meSub:"newTrip", sheet:null, form:{...state.form, newTripName:"", newTripMembers:[...new Set(others)], newTripDraft:""} });
 }
 function addTripMember(){
+  if(state.form.newTripMembers.length >= 19){ fail(new Error("每趟旅程最多 20 位旅伴")); return; }
   const v = state.form.newTripDraft.trim();
   if(v && v !== myName() && !state.form.newTripMembers.includes(v)) setForm({ newTripMembers:[...state.form.newTripMembers, v], newTripDraft:"" });
   else setForm({ newTripDraft:"" });
 }
 function removeTripMember(name){ setForm({ newTripMembers: state.form.newTripMembers.filter(m => m !== name) }); }
-function createTrip(){
+async function createTrip(){
   const name = state.form.newTripName.trim();
   if(!name || !state.groupId) return;
   const me = myName();
   const members = [me, ...state.form.newTripMembers.filter(n => n !== me)];
+  try { validateTripInput({name, status:"進行中", members}); } catch(e){ fail(e); return; }
   const id = uid("T");
-  setDoc(tripRef(id), { name, status:"進行中", createdAt:Date.now(), members, expenses:[] }).catch(fail);
+  try{await setDoc(tripRef(id), { name, status:"進行中", createdAt:Date.now(), members, expenses:[] });}catch(e){fail(e);return;}
   state.tripId = id; state.justCreated = id; saveLast();
   setState({ tab:"add", meSub:null, form:{...state.form, newTripName:"", newTripMembers:[], newTripDraft:"", forTrip:null} });
   toast("旅程已建立,開始記帳吧");
 }
 function endTrip(){
+  if(curGroup()?.ownerUid !== state.user?.uid){ fail(new Error("只有群組擁有者可以結束旅程")); return; }
   updateDoc(tripRef(state.tripId), { status:"已結束" }).catch(fail);
   setState({ confirmEnd:false });
 }
-function reopenTrip(id){ updateDoc(tripRef(id || state.tripId), { status:"進行中" }).catch(fail); toast("已重新開啟旅程"); }
+function reopenTrip(id){ if(curGroup()?.ownerUid !== state.user?.uid){ fail(new Error("只有群組擁有者可以重新開啟旅程")); return; } updateDoc(tripRef(id || state.tripId), { status:"進行中" }).catch(fail); toast("已重新開啟旅程"); }
 function addMember(){
   const name = state.form.memberDraft.trim();
   const t = curTrip();
+  if(t && t.members.length >= 20){ fail(new Error("每趟旅程最多 20 位旅伴")); return; }
   if(!name || !t || t.members.includes(name)){ setForm({ memberDraft:"" }); setState({ addingMember:false }); return; }
   updateDoc(tripRef(t.id), { members: arrayUnion(name) }).catch(fail);
   setFormSilent({ memberDraft:"" }); setState({ addingMember:false });
@@ -526,10 +634,12 @@ function addMember(){
 function toggleExpand(id){ setState({ expandedId: state.expandedId === id ? null : id }); }
 function deleteExpense(expenseId){
   const t = curTrip(); if(!t) return;
+  if(curGroup()?.ownerUid !== state.user?.uid){ fail(new Error("只有群組擁有者可以刪除支出")); return; }
   const exp = (t.expenses || []).find(e => e.id === expenseId);
   if(!exp) return;
   if(!confirm("確定刪除這筆「" + (exp.note || "支出") + "」 NT$ " + fmt(exp.amount) + "?")) return;
-  updateDoc(tripRef(t.id), { expenses: arrayRemove(exp) }).catch(fail);
+  if(exp._doc) deleteDoc(doc(db, "groups", state.groupId, "trips", t.id, "expenses", exp.id)).catch(fail);
+  else updateDoc(tripRef(t.id), { expenses: arrayRemove(exp) }).catch(fail);
   setState({ expandedId:null });
 }
 
@@ -586,23 +696,28 @@ function toggleAllParticipants(){
   const all = state.form.participants.length === t.members.length;
   setForm({ participants: all ? [] : [...t.members] });
 }
-function saveExpense(){
+let savingExpense = false;
+async function saveExpense(){
+  if(savingExpense) return;
   const f = state.form; const t = curTrip();
   if(!t || t.status !== "進行中") return;
   const total = parseFloat(f.amount) || 0;
-  if(!total || f.participants.length === 0) return;
+  if(!Number.isFinite(total) || total <= 0 || total > 10000000 || f.participants.length === 0 || f.participants.length > 20) return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(f.date) || !t.members.includes(f.payer) || !f.participants.every(p => t.members.includes(p))) return;
   let shares;
   if(f.splitMethod === "equal"){
-    shares = f.participants.map(p => ({ name:p, amount: Math.round((total/f.participants.length)*10)/10 }));
-    const diff = Math.round((total - shares.reduce((s,x) => s + x.amount, 0))*10)/10;
-    if(diff !== 0) shares[0].amount = Math.round((shares[0].amount + diff)*10)/10;
+    const cents=Math.round(total*100),base=Math.floor(cents/f.participants.length),rest=cents%f.participants.length;
+    shares=f.participants.map((p,i)=>({name:p,amount:(base+(i<rest?1:0))/100}));
   } else {
     const sum = f.participants.reduce((s,p) => s + (parseFloat(f.customAmounts[p])||0), 0);
     if(Math.abs(sum - total) >= 0.05) return;
     shares = f.participants.map(p => ({ name:p, amount: parseFloat(f.customAmounts[p])||0 }));
   }
   const expense = { id:uid("E"), date:f.date, amount:total, category:f.category, note:f.note.trim(), payer:f.payer, participants:shares };
-  updateDoc(tripRef(t.id), { expenses: arrayUnion(expense) }).catch(fail);
+  savingExpense = true;
+  try { validateExpenseInput(expense, t.members); await setDoc(doc(db, "groups", state.groupId, "trips", t.id, "expenses", expense.id), cleanExpense(expense)); }
+  catch(e){ fail(e); return; }
+  finally { savingExpense = false; }
   state.form = {...f, amount:"", note:"", customAmounts:{}};
   toast("已記一筆 NT$ " + fmt(total));
 }
@@ -611,9 +726,9 @@ function saveExpense(){
    備份匯出 / 舊資料匯入(只複製,不動原資料)
    ============================================================ */
 function buildBackup(trips){
-  const tripData = {};
+  const tripData = Object.create(null);
   const list = trips.map(t => {
-    tripData[t.id] = { members:t.members || [], expenses:t.expenses || [] };
+    tripData[t.id] = { members:t.members || [], expenses:(t.expenses || []).map(({_doc, ...e}) => e) };
     return { id:t.id, name:t.name, status:t.status, createdAt:t.createdAt || 0 };
   });
   return { app:"trip-split", version:1, exportedAt:new Date().toISOString(), trips:list, tripData };
@@ -633,7 +748,7 @@ function readLocalLegacy(){
   try {
     const trips = JSON.parse(localStorage.getItem("triptally:trips") || "[]");
     if(!Array.isArray(trips) || !trips.length) return null;
-    const tripData = {};
+    const tripData = Object.create(null);
     trips.forEach(t => {
       let d = null;
       try { d = JSON.parse(localStorage.getItem("triptally:trip:" + t.id) || "null"); } catch(e){}
@@ -643,6 +758,7 @@ function readLocalLegacy(){
   } catch(e){ return null; }
 }
 function parseBackup(text){
+  if(text.length > 2000000) throw new Error("備份檔過大，請拆分後匯入");
   const o = JSON.parse(text);
   if(!o || !Array.isArray(o.trips) || typeof o.tripData !== "object" || !o.tripData) throw new Error("這不是有效的備份檔");
   return { trips:o.trips, tripData:o.tripData };
@@ -665,7 +781,7 @@ function prepareImport(src, me, existingIds){
   });
   return { items, skipped };
 }
-function openImport(){ setState({ tab:"me", meSub:"import", importPreview:null }); }
+function openImport(){ if(curGroup()?.ownerUid !== state.user?.uid){ fail(new Error("只有群組擁有者可以匯入備份")); return; } setState({ tab:"me", meSub:"import", importPreview:null }); }
 function closeImport(){ setState({ meSub:null, importPreview:null }); }
 function previewFrom(src){
   const p = prepareImport(src, myName(), new Set(state.trips.map(t => t.id)));
@@ -679,6 +795,7 @@ function readLocalAndPreview(){
 }
 function loadBackupFile(file){
   if(!file) return;
+  if(file.size > 2000000){ fail(new Error("備份檔過大，請拆分後匯入")); return; }
   const r = new FileReader();
   r.onload = () => { try { previewFrom(parseBackup(String(r.result))); } catch(e){ setState({ error:"讀取失敗:" + e.message }); } };
   r.onerror = () => setState({ error:"讀取檔案失敗" });
@@ -688,11 +805,26 @@ function previewPasted(){
   try { previewFrom(parseBackup(state.form.importText)); } catch(e){ setState({ error:"內容不是有效的備份:" + e.message }); }
 }
 async function runImport(){
+  if(curGroup()?.ownerUid !== state.user?.uid){ fail(new Error("只有群組擁有者可以匯入備份")); return; }
   const p = state.importPreview;
   if(!p || !p.items.length) return;
   try {
+    // One atomic batch per import prevents a partially imported backup.
+    const writes = p.items.reduce((n,it) => n + 1 + it.trip.expenses.length, 0);
+    if(writes > 400) throw new Error("單次匯入最多 400 筆寫入，請拆分備份");
+    p.items.forEach(it => {
+      validateTripInput(it.trip);
+      it.trip.expenses.forEach(e => validateExpenseInput(e, it.trip.members));
+    });
     const batch = writeBatch(db);
-    p.items.forEach(it => batch.set(tripRef(it.id), it.trip));
+    p.items.forEach(it => {
+      const {expenses, ...meta} = it.trip;
+      batch.set(tripRef(it.id), {...meta, expenses:[]});
+      expenses.forEach(e => {
+        const clean = cleanExpense(e, uid("E"));
+        batch.set(doc(db, "groups", state.groupId, "trips", it.id, "expenses", clean.id), clean);
+      });
+    });
     await batch.commit();
     const n = p.items.length;
     setState({ importPreview:null, meSub:null });
@@ -742,37 +874,65 @@ function needTrip(){
 function renderSetupNeeded(){
   return `<div class="login"><div class="ticket"><div class="ticket-top"><div class="kicker">TRIP SPLIT</div><div class="brand">旅行分帳</div></div>
     <div class="perf2"></div><div class="ticket-bottom"><div class="notice info" style="margin:0;">
-    ${loadError ? `<b style="color:#b3261e">無法載入 Firebase 程式庫(網路被擋或離線)。</b><br>請用手機/電腦的瀏覽器(Chrome、Safari)直接開啟檔案,不要在預覽視窗裡開。<br><small>${String(loadError).replace(/</g,"&lt;")}</small><br><br>` : ""}這個版本需要先設定 Firebase:<br><br>1. 啟用 Authentication 的「電子郵件/密碼」<br>2. 在 Firestore 規則貼上 firestore.rules<br>3. 把檔案開頭的 <code>firebaseConfig</code> 換成你專案的設定值,存檔後重新整理</div></div></div></div>`;
+    ${loadError ? `<b style="color:#b3261e">無法載入 Firebase 程式庫(網路被擋或離線)。</b><br>請用手機/電腦的瀏覽器(Chrome、Safari)直接開啟檔案,不要在預覽視窗裡開。<br><small>${esc(loadError)}</small><br><br>` : ""}這個版本需要先設定 Firebase:<br><br>1. 啟用 Authentication 的「電子郵件/密碼」<br>2. 在 Firestore 規則貼上 firestore.rules<br>3. 把檔案開頭的 <code>firebaseConfig</code> 換成你專案的設定值,存檔後重新整理</div></div></div></div>`;
 }
+const TRAIN_SVG = "<svg viewBox=\"0 0 520 110\" role=\"img\" aria-label=\"綠色江之電列車\"><rect x=\"4\" y=\"12\" width=\"512\" height=\"72\" rx=\"16\" fill=\"#1F7A52\"/><path d=\"M20 12H500L490 7H30Z\" fill=\"#496354\"/><rect x=\"4\" y=\"42\" width=\"512\" height=\"18\" fill=\"#FFF3C4\"/><rect x=\"22\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#DFF6FF\"/><rect x=\"86\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#DFF6FF\"/><rect x=\"150\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#DFF6FF\"/><rect x=\"214\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#DFF6FF\"/><rect x=\"278\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#DFF6FF\"/><rect x=\"342\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#DFF6FF\"/><rect x=\"406\" y=\"22\" width=\"52\" height=\"18\" rx=\"4\" fill=\"#FFF8B0\"/><path d=\"M82 16V80M210 16V80M338 16V80M466 16V80\" stroke=\"#133f2e\" opacity=\".45\"/><rect x=\"110\" y=\"84\" width=\"300\" height=\"6\" rx=\"3\" fill=\"#333\"/><circle cx=\"42\" cy=\"92\" r=\"10\" fill=\"#222\"/><circle cx=\"478\" cy=\"92\" r=\"10\" fill=\"#222\"/><circle cx=\"42\" cy=\"92\" r=\"4\" fill=\"#777\"/><circle cx=\"478\" cy=\"92\" r=\"4\" fill=\"#777\"/><text x=\"250\" y=\"75\" text-anchor=\"middle\" font-size=\"10\" letter-spacing=\"3\" fill=\"#fff3c4\">ENODEN  300</text></svg>";
+let trainStarted = 0, trainTimer = null, autoTrainScheduled = false;
+function passTrain(){
+  if(trainStarted && Date.now() - trainStarted < 6400) return;
+  trainStarted = Date.now();
+  clearTimeout(trainTimer);
+  render();
+  trainTimer = setTimeout(() => { trainStarted = 0; if(state.screen === "login") render(); },6400);
+}
+function fitPhone(){
+  const scale = Math.min((window.innerWidth - 44) / 402, (window.innerHeight - 44) / 874, 1.15);
+  const safeScale = Math.max(.2, scale);
+  const stage = document.getElementById("phoneStage");
+  const frame = document.querySelector(".phone-frame");
+  if(stage){ stage.style.width = 402 * safeScale + "px"; stage.style.height = 874 * safeScale + "px"; }
+  if(frame) frame.style.transform = "scale(" + safeScale + ")";
+}
+window.addEventListener("resize",fitPhone);
 function renderLogin(){
-  const f = state.form; const signup = f.authMode === "signup";
-  let html = `<div class="login"><div class="ticket">
-    <div class="ticket-top"><div class="kicker">TRIP SPLIT</div><div class="brand">旅行分帳</div>
-    <div class="tag">跟旅伴一起記帳、自動算出誰該付誰多少。</div></div>
-    <div class="perf2"></div><div class="ticket-bottom">`;
-  if(state.error) html += `<div class="notice" style="display:flex;justify-content:space-between;gap:10px;"><span>${esc(state.error)}</span><span style="cursor:pointer;" onclick="clearError()">✕</span></div>`;
-  html += `<div class="tabs2"><button class="${signup?"":"on"}" onclick="setForm({authMode:'login'})">登入</button><button class="${signup?"on":""}" onclick="setForm({authMode:'signup'})">建立帳號</button></div>`;
-  if(signup) html += `<div class="field"><div class="field-label">你的名字(旅伴會看到,帳目也用這個名字)</div>
-    <input id="authNameInput" value="${esc(f.authName)}" placeholder="例如:小明" oninput="setFormSilent({authName:this.value})"></div>`;
-  html += `<div class="field"><div class="field-label">Email</div>
-    <input id="authEmailInput" type="email" autocomplete="email" value="${esc(f.email)}" placeholder="you@example.com" oninput="setFormSilent({email:this.value})"></div>`;
-  html += `<div class="field"><div class="field-label">密碼${signup?"(至少 6 個字元)":""}</div>
-    <input id="authPassInput" type="password" autocomplete="${signup?"new-password":"current-password"}" value="${esc(f.password)}" oninput="setFormSilent({password:this.value})" onkeydown="if(event.key==='Enter')submitAuth()"></div>`;
-  html += `<button class="btn primary full" onclick="submitAuth()">${signup?"建立帳號":"登入"}</button>`;
-  html += `<div class="or">或</div><button class="btn ghost full" onclick="doGoogle()">用 Google 帳號登入</button>`;
-  html += `<div style="font-size:12px;opacity:.5;text-align:center;margin-top:16px;">登入後會保持登入狀態</div>`;
-  html += `</div></div></div>`;
-  return html;
+  const f = state.form, signup = f.authMode === "signup", busy = authBusy || authSuccess;
+  const elapsed = trainStarted ? Math.max(0,Date.now() - trainStarted) : 0;
+  return `<div class="login enoden-login">
+    <div class="enoden-world" aria-hidden="true"><div class="enoden-cloud"></div><div class="enoden-cloud two"></div>
+      <div class="enoden-sea"><span class="coast-label">湘南海岸 ・ SHONAN COAST</span></div><div class="enoden-road"></div><div class="enoden-rail"></div></div>
+    <div class="enoden-train ${trainStarted ? "passing" : ""}" style="animation-delay:-${elapsed}ms" aria-hidden="true">${TRAIN_SVG}</div>
+    <div class="login-layout">
+      <header class="crossing-hero">
+        <div class="crossing-equipment" aria-hidden="true"><div class="crossing-signal"><i></i><i></i></div><div><div class="crossing-bar"></div><span class="crossing-sign">カン カン ・ 踏切</span></div></div>
+        <div class="crossing-copy"><h1>鎌倉高校前</h1><p>電車來之前，先停一下。</p><button class="train-trigger" onclick="passTrain()">🚃 讓電車通過一次</button></div>
+      </header>
+      <section class="enoden-card" aria-label="Tallo 登入">
+        <div class="login-brand"><div><h2>Tallo</h2><p>— 江之電篇 —</p></div><span class="ticket-number" aria-hidden="true">江ノ電<br>ENODEN</span></div>
+        ${state.error ? `<div class="notice row" role="alert"><span>${esc(state.error)}</span><button class="auth-error-close" aria-label="關閉錯誤提示" onclick="clearError()">×</button></div>` : ""}
+        <div class="tabs2" role="group" aria-label="登入模式">
+          <button class="${signup ? "" : "on"}" aria-pressed="${!signup}" onclick="setAuthMode('login')" ${busy ? "disabled" : ""}>登入</button>
+          <button class="${signup ? "on" : ""}" aria-pressed="${signup}" onclick="setAuthMode('signup')" ${busy ? "disabled" : ""}>建立帳號</button>
+        </div>
+        <form onsubmit="event.preventDefault();submitAuth()" aria-busy="${busy}">
+          ${signup ? `<div class="field"><label class="field-label" for="authNameInput">你的名字</label><input id="authNameInput" value="${esc(f.authName)}" placeholder="旅伴會看到的名字" autocomplete="nickname" maxlength="80" required oninput="setFormSilent({authName:this.value})" ${busy ? "disabled" : ""}></div>` : ""}
+          <div class="field"><label class="field-label" for="authEmailInput">Email</label><input id="authEmailInput" type="email" autocomplete="email" value="${esc(f.email)}" placeholder="you@example.com" required oninput="setFormSilent({email:this.value})" ${busy ? "disabled" : ""}></div>
+          <div class="field"><label class="field-label" for="authPassInput">密碼</label><div class="password-field"><input id="authPassInput" type="${passwordVisible ? "text" : "password"}" autocomplete="${signup ? "new-password" : "current-password"}" value="${esc(f.password)}" placeholder="至少 6 碼" minlength="6" required oninput="setFormSilent({password:this.value})" ${busy ? "disabled" : ""}><button id="passwordToggle" type="button" aria-label="切換密碼顯示" aria-pressed="${passwordVisible}" onclick="togglePassword()">${passwordVisible ? "隱藏" : "顯示"}</button></div></div>
+          <button class="btn auth-submit" type="submit" ${busy ? "disabled" : ""}>${authSuccess ? "柵欄放下中… 電車慢慢通過中" : authBusy ? "正在驗證帳號…" : signup ? "建立帳號" : "登入"}</button>
+        </form>
+        ${authSuccess ? '<div class="auth-success" role="status">✓ 電車通過了，歡迎回來！柵欄升起，可以進站了。</div>' : ""}
+        <p class="login-foot">登入後會保持登入狀態</p>
+      </section>
+    </div>
+  </div>`;
 }
-
-/* ============================================================
-   畫面:頂部列 / 底部導覽 / 切換面板
-   ============================================================ */
+function renderAppBanner(){
+  return `<div class="app-banner"><button type="button" onclick="goTab('daily')" class="return-daily">‹ 個人帳本</button><div class="banner-brand">Tallo</div><div class="banner-route">江ノ電 ・ 旅の記録</div>${TRAIN_SVG}</div>`;
+}
 function renderTopbar(){
   const t = curTrip(), g = curGroup();
-  const title = t ? t.name : (g ? g.name : "旅行分帳");
+  const title = t ? t.name : (g ? g.name : "旅程帳本");
   const sub = t ? (g ? g.name : "") : (g ? "尚未選擇旅程" : "尚未加入群組");
-  const pill = t ? `<span class="pill ${t.status === "進行中" ? "" : "end"}">${t.status}</span>` : "";
+  const pill = t ? `<span class="pill ${t.status === "進行中" ? "" : "end"}">${esc(t.status)}</span>` : "";
   return `<div class="topbar"><div class="tb-main" onclick="openSheet()"><div class="tb-title">${esc(title)}<span class="caret">▾</span></div>
     <div class="tb-sub">${esc(sub)}</div></div>${pill}</div>`;
 }
@@ -790,13 +950,13 @@ function renderSheet(){
     html += `<div class="empty" style="padding:20px 0;"><div class="d">還沒有群組</div><button class="btn primary" onclick="goTab('me')">建立或加入群組</button></div></div>`;
     return html;
   }
-  html += `<div class="section-label">群組</div><div class="chips">${state.groups.map(x => chip(x.name, { selected:x.id === state.groupId, onClick:`pickGroup('${x.id}')` })).join("")}</div>`;
+  html += `<div class="section-label">群組</div><div class="chips">${state.groups.map(x => chip(x.name, { selected:x.id === state.groupId, onClick:`pickGroup(${jsArg(x.id)})` })).join("")}</div>`;
   html += `<div class="section-label">${g ? esc(g.name) + " 的旅程" : "旅程"}</div>`;
   if(!state.tripsLoaded) html += loadingBlock("讀取中…");
   else if(!state.trips.length) html += `<div style="font-size:14px;opacity:.55;padding:6px 0 10px;">還沒有旅程</div>`;
   [...act, ...end].forEach(t => {
-    html += `<div class="card tap ${t.id === state.tripId ? "cur" : ""} ${t.status !== "進行中" ? "muted" : ""}" onclick="pickTrip('${t.id}')">
-      <div class="row"><div><div class="card-title">${esc(t.name)}</div><div class="card-sub">${t.status} · ${(t.members||[]).length} 位旅伴 · ${(t.expenses||[]).length} 筆</div></div>
+    html += `<div class="card tap ${t.id === state.tripId ? "cur" : ""} ${t.status !== "進行中" ? "muted" : ""}" onclick="pickTrip(${jsArg(t.id)})">
+      <div class="row"><div><div class="card-title">${esc(t.name)}</div><div class="card-sub">${esc(t.status)} · ${(t.members||[]).length} 位旅伴 · ${(t.expenses||[]).length} 筆</div></div>
       ${t.id === state.tripId ? `<span style="color:var(--stamp);font-size:18px;">✓</span>` : ""}</div></div>`;
   });
   html += `<button class="btn primary full" style="margin-top:8px;" onclick="openNewTrip()">＋ 開始新旅程</button></div>`;
@@ -823,18 +983,18 @@ function renderAdd(){
   html += `<div class="field"><input id="noteInput" value="${esc(f.note)}" placeholder="備註(例如:燒肉)" oninput="setFormSilent({note:this.value})"></div>`;
   html += `<div class="row" style="align-items:flex-end;gap:12px;margin-bottom:16px;">
     <div style="flex:1;"><div class="field-label">日期</div><input id="dateInput" type="date" value="${esc(f.date)}" onchange="setFormSilent({date:this.value})"></div></div>`;
-  html += `<div class="field"><div class="field-label">誰付的錢</div><div class="chips">${members.map(m => chip(m, { selected:f.payer === m, onClick:`setForm({payer:'${esc(m)}'})` })).join("")}</div></div>`;
+  html += `<div class="field"><div class="field-label">誰付的錢</div><div class="chips">${members.map(m => chip(m, { selected:f.payer === m, onClick:`setForm({payer:${jsArg(m)}})` })).join("")}</div></div>`;
   html += `<div class="field-label">怎麼分</div>
     <div class="seg"><button class="${f.splitMethod === "equal" ? "on" : ""}" onclick="setForm({splitMethod:'equal'})">平均分攤</button>
     <button class="${f.splitMethod === "custom" ? "on" : ""}" onclick="setForm({splitMethod:'custom'})">自訂金額</button></div>`;
   html += `<div class="row" style="margin-bottom:8px;"><div class="field-label" style="margin:0;">這筆有誰一起(可跟旅伴名單不同)</div>
     <span class="link" onclick="toggleAllParticipants()">${f.participants.length === members.length ? "全不選" : "全選"}</span></div>
-    <div class="chips">${members.map(m => chip(m, { selected:f.participants.includes(m), onClick:`toggleParticipant('${esc(m)}')` })).join("")}</div>`;
+    <div class="chips">${members.map(m => chip(m, { selected:f.participants.includes(m), onClick:`toggleParticipant(${jsArg(m)})` })).join("")}</div>`;
   if(f.splitMethod === "equal"){
     html += `<div class="hint" id="equalShare"></div>`;
   } else {
     html += `<div style="margin-top:12px;">${f.participants.map((p, i) => `<div class="cust-row"><div class="nm">${esc(p)}</div>
-      <input id="customAmount_${i}" type="text" inputmode="decimal" class="mono" value="${esc(f.customAmounts[p] || "")}" placeholder="0" oninput="onCustom('${esc(p)}', this)"></div>`).join("")}
+      <input id="customAmount_${i}" type="text" inputmode="decimal" class="mono" value="${esc(f.customAmounts[p] || "")}" placeholder="0" oninput="onCustom(${jsArg(p)}, this)"></div>`).join("")}
       <div class="hint" id="customSum"></div></div>`;
   }
   return html;
@@ -859,17 +1019,17 @@ function renderList(){
   const days = [];
   exps.forEach(e => { let d = days.find(x => x.date === e.date); if(!d){ d = { date:e.date, items:[] }; days.push(d); } d.items.push(e); });
   days.forEach(d => {
-    html += `<div class="day"><span>${fmtDay(d.date)}</span><span class="mono">NT$ ${fmt(d.items.reduce((s,e) => s + e.amount, 0))}</span></div>`;
+    html += `<div class="day"><span>${esc(fmtDay(d.date))}</span><span class="mono">NT$ ${fmt(d.items.reduce((s,e) => s + e.amount, 0))}</span></div>`;
     d.items.forEach(e => {
       const cat = CATEGORIES.find(c => c.key === e.category) || CATEGORIES[5];
       const open = state.expandedId === e.id;
-      html += `<div class="exp" onclick="toggleExpand('${e.id}')"><div class="exp-main"><div class="exp-ic">${cat.icon}</div>
+      html += `<div class="exp" onclick="toggleExpand(${jsArg(e.id)})"><div class="exp-main"><div class="exp-ic">${cat.icon}</div>
         <div style="flex:1;min-width:0;"><div class="exp-note">${esc(e.note || cat.label)}</div>
         <div class="exp-meta">${esc(e.payer)} 付款 · ${(e.participants||[]).length} 人分攤</div></div>
         <div class="exp-amt">${fmt(e.amount)}</div></div>`;
       if(open){
         html += `<div class="exp-detail">${(e.participants||[]).map(p => `<div class="sh"><span>${esc(p.name)}</span><span class="mono">${fmt(p.amount)}</span></div>`).join("")}
-          ${t.status === "進行中" ? `<div style="margin-top:10px;"><button class="btn danger sm" onclick="event.stopPropagation();deleteExpense('${e.id}')">刪除這筆</button></div>` : ""}</div>`;
+          ${t.status === "進行中" && curGroup()?.ownerUid === state.user?.uid ? `<div style="margin-top:10px;"><button class="btn danger sm" onclick="event.stopPropagation();deleteExpense(${jsArg(e.id)})">刪除這筆</button></div>` : ""}</div>`;
       }
       html += `</div>`;
     });
@@ -898,7 +1058,7 @@ function renderStats(){
   let html = `<div class="summary"><div><div class="card-sub" style="margin:0 0 2px;">旅程總支出</div><div class="big">NT$ ${fmt(c.grand)}</div></div>
     <div class="card-sub">${t.members.length} 人 · ${(t.expenses||[]).length} 筆</div></div>`;
   if(!(t.expenses||[]).length) return html + `<div class="empty"><div class="d">記幾筆帳之後,這裡會出現圖表。</div></div>`;
-  const totals = {};
+  const totals = Object.create(null);
   t.expenses.forEach(e => totals[e.category] = (totals[e.category] || 0) + e.amount);
   const rows = CATEGORIES.map(x => ({...x, amount: totals[x.key] || 0})).filter(r => r.amount > 0).sort((a,b) => b.amount - a.amount);
   let acc = 0;
@@ -934,6 +1094,7 @@ function renderSettle(){
   c.txns.forEach(x => {
     html += `<div class="txn"><b>${esc(x.from)}</b><span class="arrow">轉給</span><b>${esc(x.to)}</b><span class="amt">NT$ ${fmt(x.amount)}</span></div>`;
   });
+  if(curGroup()?.ownerUid !== state.user?.uid) return html + `<div class="card-sub" style="margin-top:26px;">旅程結束與重新開啟由群組擁有者管理。</div>`;
   html += `<div style="margin-top:26px;">`;
   if(t.status === "進行中"){
     if(!state.confirmEnd) html += `<button class="btn danger full" onclick="setState({confirmEnd:true})">🏁 結束這趟旅程</button>`;
@@ -963,15 +1124,17 @@ function renderMe(){
   html += `<div class="section-label">目前群組</div><div class="card"><div class="row"><div class="card-title">${esc(g ? g.name : "")}</div>
     <span class="badge" onclick="openSheet()">切換 ⇅</span></div>
     <div class="chips" style="margin-top:10px;">${Object.values((g && g.memberNames) || {}).map(n => chip(n, { fixed:true })).join("")}</div>
-    <div class="invite"><div><div class="card-sub" style="margin:0 0 2px;">邀請碼(旅伴登入後輸入就能加入)</div><div class="code">${esc(g ? g.inviteCode : "")}</div></div>
-    <button class="btn ghost sm" onclick="copyCode('${esc(g ? g.inviteCode : "")}')">複製</button></div></div>`;
+    <div class="invite"><div><div class="card-sub" style="margin:0 0 2px;">邀請碼（有效七天；過期需擁有者更新）</div><div class="code">${esc(g ? g.inviteCode : "")}</div></div>
+    <button class="btn ghost sm" onclick="copyCode(${jsArg(g ? g.inviteCode : "")})">複製</button></div>
+    ${g && u && g.ownerUid === u.uid ? '<button class="btn ghost sm" onclick="rotateInvite()">更新邀請碼（舊碼失效）</button>' : ''}
+    </div>`;
 
   html += `<div class="section-label">旅程</div>`;
   if(!state.tripsLoaded) html += loadingBlock("讀取中…");
   const byNew = [...state.trips].sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
   byNew.forEach(x => {
-    html += `<div class="card tap ${x.id === state.tripId ? "cur" : ""} ${x.status !== "進行中" ? "muted" : ""}" onclick="pickTrip('${x.id}')">
-      <div class="row"><div><div class="card-title">${esc(x.name)}</div><div class="card-sub">${x.status} · ${(x.members||[]).length} 位旅伴 · ${(x.expenses||[]).length} 筆</div></div>
+    html += `<div class="card tap ${x.id === state.tripId ? "cur" : ""} ${x.status !== "進行中" ? "muted" : ""}" onclick="pickTrip(${jsArg(x.id)})">
+      <div class="row"><div><div class="card-title">${esc(x.name)}</div><div class="card-sub">${esc(x.status)} · ${(x.members||[]).length} 位旅伴 · ${(x.expenses||[]).length} 筆</div></div>
       ${x.id === state.tripId ? `<span style="color:var(--stamp);font-size:18px;">✓</span>` : ""}</div></div>`;
   });
   html += `<button class="btn primary full" style="margin-top:4px;" onclick="openNewTrip()">＋ 開始新旅程</button>`;
@@ -990,7 +1153,7 @@ function renderMe(){
   }
 
   html += groupForms();
-  html += `<div class="section-label">資料</div><div class="row">
+  html += `<div class="section-label">共用帳資料</div><div class="row">
     <button class="btn ghost" style="flex:1;" onclick="openImport()">📥 匯入舊資料</button>
     <button class="btn ghost" style="flex:1;" onclick="exportGroup()">💾 匯出備份</button></div>`;
   return html;
@@ -1007,7 +1170,7 @@ function renderNewTrip(){
     <div class="row" style="margin-bottom:10px;"><input id="memberDraftInput" value="${esc(f.newTripDraft)}" placeholder="輸入旅伴姓名"
       oninput="setFormSilent({newTripDraft:this.value})" onkeydown="if(event.key==='Enter')addTripMember()">
       <button class="btn default" style="flex-shrink:0;" onclick="addTripMember()">＋</button></div>
-    <div class="chips">${chip(myName() + "(我)", { fixed:true })}${f.newTripMembers.map(m => chip(m, { onRemove:`removeTripMember('${esc(m)}')` })).join("")}</div></div>`;
+    <div class="chips">${chip(myName() + "(我)", { fixed:true })}${f.newTripMembers.map(m => chip(m, { onRemove:`removeTripMember(${jsArg(m)})` })).join("")}</div></div>`;
   html += `<button id="createTripBtn" class="btn primary full" ${!f.newTripName.trim() ? "disabled" : ""} onclick="createTrip()">建立旅程</button>`;
   return html;
 }
@@ -1038,12 +1201,22 @@ function renderImport(){
    總繪製
    ============================================================ */
 function render(){
+  if(state.screen === "app" && state.tab === "daily"){
+    if(!document.getElementById('dailyApp')) { document.getElementById('app').innerHTML='<div id="dailyApp"></div>';
+    mountDaily({user:state.user,db,auth,api:{doc,collection,query,where,onSnapshot,setDoc},logout:doLogout,goShared:(mode,gid)=>{
+      if(gid && state.groups.some(g=>g.id===gid)) selectGroup(gid,null);
+      state.tab=mode==='add'?'add':'me'; state.meSub=null;state.sheet=null;
+      if(mode==='add')state.form={...state.form,amount:'',note:'',date:today()};render();
+    }}); } fitPhone(); return;
+  }
+
   if(composing){ pendingRender = true; return; }
   const active = document.activeElement;
   const activeId = (active && active.id) ? active.id : null;
   const selStart = (active && typeof active.selectionStart === "number") ? active.selectionStart : null;
   const selEnd = (active && typeof active.selectionEnd === "number") ? active.selectionEnd : null;
-  const scrollY = window.scrollY;
+  const scroller = document.getElementById("phoneScroll");
+  const scrollY = scroller ? scroller.scrollTop : window.scrollY;
 
   let html = "";
   if(state.screen === "boot") html = loadingBlock("連線中…");
@@ -1060,7 +1233,7 @@ function render(){
     }
     const err = state.error ? `<div class="notice" style="display:flex;justify-content:space-between;gap:10px;"><span>${esc(state.error)}</span><span style="cursor:pointer;" onclick="clearError()">✕</span></div>` : "";
     const bar = renderSaveBar();
-    html = renderTopbar() + `<div class="main ${bar ? "with-bar" : ""}">${err}${body}</div>` + bar + renderNav() + renderSheet()
+    html = renderAppBanner() + renderTopbar() + `<div class="main ${bar ? "with-bar" : ""}">${err}${body}</div>` + bar + renderNav() + renderSheet()
       + (state.toast ? `<div class="toast">${esc(state.toast)}</div>` : "");
   }
   document.getElementById("app").innerHTML = html;
@@ -1075,7 +1248,9 @@ function render(){
       }
     }
   }
-  if(Math.abs(window.scrollY - scrollY) > 1) window.scrollTo(0, scrollY);
+  if(scroller && Math.abs(scroller.scrollTop - scrollY) > 1) scroller.scrollTop = scrollY;
+  fitPhone();
+  if(state.screen === "login" && !autoTrainScheduled){ autoTrainScheduled = true; setTimeout(() => { if(state.screen === "login") passTrain(); },900); }
 }
 document.addEventListener("compositionstart", () => { composing = true; });
 document.addEventListener("compositionend", () => {
@@ -1090,8 +1265,8 @@ function boot(){
 
 Object.assign(window, {
   setState, setForm, setFormSilent, clearError,
-  doLogin, doSignup, submitAuth, doGoogle, doLogout,
-  createGroup, joinGroup, copyCode, pickGroup, pickTrip, openSheet, closeSheet, goTab,
+  doLogin, doSignup, submitAuth, doGoogle, doLogout, setAuthMode, togglePassword, passTrain,
+  createGroup, joinGroup, rotateInvite, copyCode, pickGroup, pickTrip, openSheet, closeSheet, goTab,
   openNewTrip, addTripMember, removeTripMember, createTrip, endTrip, reopenTrip, addMember,
   toggleExpand, deleteExpense, onAmount, onCustom, toggleParticipant, toggleAllParticipants, saveExpense,
   exportGroup, openImport, closeImport, readLocalAndPreview, loadBackupFile, previewPasted, runImport, cancelImport,

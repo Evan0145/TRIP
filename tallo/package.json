@@ -1,0 +1,13 @@
+{
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase": "13.0.0",
+    "firebase-tools": "14.25.0"
+  },
+  "scripts": {
+    "test": "node --test tests/frontend.test.mjs tests/auth-theme.test.mjs tests/daily-model.test.mjs tests/daily-integration.test.mjs",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-tallo-security \"node --test tests/firestore.test.mjs\""
+  }
+}
