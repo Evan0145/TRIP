@@ -47,8 +47,10 @@ test('login HTML has labels, no Google and no seeded credentials',()=>{
  const html=api.renderLogin();assert(html.includes('for="authEmailInput"'));assert(html.includes('for="authPassInput"'));
  assert(!html.includes('Google'));assert(!html.includes('123456'));assert(!html.includes('evan90405'));
 });
-test('mobile shell and reduced motion are present',()=>{
- assert(html.includes('id="phoneStage"'));assert(html.includes('id="phoneScroll"'));
+test('responsive website and reduced motion are present',()=>{
+ assert(html.includes('id="siteRoot"'));assert(html.includes('id="phoneScroll"'));
+ assert(!html.includes('class="phone-frame"'));assert(!html.includes('phone-island'));assert(!html.includes('function fitPhone'));
+ assert(!fs.readFileSync(new URL('../daily-app.mjs',import.meta.url),'utf8').includes('function fitPhone'));
  const css=fs.readFileSync(new URL('../enoden.css',import.meta.url),'utf8');
  assert(css.includes('prefers-reduced-motion'));assert(css.includes('6s cubic-bezier'));
 });

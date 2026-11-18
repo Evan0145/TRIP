@@ -18,11 +18,6 @@ let toastTimer;
 const own=t=>t.amount;
 const cat=id=>CATEGORIES.find(c=>c.id===id)||CATEGORIES.at(-1);
 const monthRows=()=>summarize(state.records,state.month,state.budget);
-function fitPhone(){
- const scale=Math.max(.2,Math.min((innerWidth-44)/402,(innerHeight-44)/874,1.15));
- const stage=document.getElementById('phoneStage'),frame=document.querySelector('.phone-frame');
- stage.style.width=402*scale+'px';stage.style.height=874*scale+'px';frame.style.transform='scale('+scale+')';
-}
 function notify(text){state.toast=text;render(true);clearTimeout(toastTimer);toastTimer=setTimeout(()=>{state.toast='';render(true)},2200);}
 function navigate(view){state.view=view;state.error='';state.modal=null;render();document.getElementById('phoneScroll').scrollTo(0,0);}
 function monthNav(){return '<div class="month-control"><button data-action="month" data-step="-1" aria-label="上個月">‹</button><strong>'+esc(monthTitle(state.month))+'</strong><button data-action="month" data-step="1" aria-label="下個月">›</button></div>';}
@@ -71,7 +66,7 @@ function render(preserve=false){
  const scroller=document.getElementById('phoneScroll'),y=scroller.scrollTop;
  const views={home,list:ledger,stats,split:splitPage,me,add:addPage};
  const root=document.getElementById('dailyApp');if(!root)return;if(!readyEntries||!readyBudget){root.innerHTML=state.syncError?'<div class="daily-error" role="alert">'+esc(state.syncError)+'<button data-action="retry">重新連線</button></div>':'<div class="spinner" role="status">正在同步個人帳本…</div>';return;}root.innerHTML=(state.syncError?'<div class="daily-error" role="alert">'+esc(state.syncError)+'</div>':'')+views[state.view]()+(state.view==='add'?'':nav())+modal()+(state.toast?'<div class="daily-toast" role="status">'+esc(state.toast)+'</div>':'');
- if(preserve)scroller.scrollTop=y;fitPhone();
+ if(preserve)scroller.scrollTop=y;
  if(state.modal)setTimeout(()=>document.querySelector('.preview-modal input')?.focus(),0);
 }
 function startEntry(category,group){
@@ -108,7 +103,7 @@ document.addEventListener('submit',async event=>{
  catch(e){state.error=e.message;render(true);}
  finally{state.busy=false;status.remove();buttons.forEach(b=>b.disabled=false);}
 });
-window.addEventListener('resize',fitPhone);
+
 
 let ctx=null,userId=null,cleanups=[],personal=[],shared=new Map(),groupStops=new Map(),sharedPaid=0,sharedOwed=0;
 let readyEntries=false,readyBudget=false;

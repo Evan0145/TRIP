@@ -1,17 +1,17 @@
 # Tallo — 江之電篇
 
-Implements the supplied “海岸平交道白天 — 直式最終版” specification across the Email-only login, account creation, expense entry, ledger, statistics, settlement and account/trip management pages.
+Tallo is a responsive bookkeeping website. The iPhone 17 Pro is the user's target viewing device, not a device frame to draw inside the page.
 
-- The centered device canvas is 402 × 874 with proportional viewport fitting, rounded black frame, Dynamic Island and internal scrolling.
-- Login uses the coastal scene, alternating crossing lights, six-second SVG train and a cream ticket card.
-- Site interiors share the coastal banner, green train details, cream cards, red primary actions, green navigation and matching charts.
-- The coast label and signal pole have been repositioned to avoid text overlap. A dedicated corridor keeps the passing train between the hero controls and login card.
-- Account creation retains the real display-name field needed by Firebase. Real credentials are never prefilled.
-- Authentication success is shown only after Firebase resolves successfully. Failed credentials do not start a successful entry transition. Existing sessions enter normally without an artificial delay.
-- Reduced-motion preferences disable the animation and shorten the successful-entry delay.
-- CSS is in enoden.css; no external image assets are required. Google Fonts are optional with system fallbacks.
-- A temporary local preview uses clearly labeled sample data, contains no production connection, and is not committed or shipped as an authentication bypass.
+- The page uses the real viewport, with no simulated bezel, Dynamic Island, fixed 402 × 874 canvas, or JavaScript scaling.
+- Content fills narrow screens and uses a readable 760px maximum width on larger screens.
+- Dynamic viewport height and iOS safe-area insets keep navigation, forms and save actions within the available browser area. Text inputs use 16px fonts to avoid iOS focus zoom.
+- Login retains the coastal scene, crossing signal, six-second train and cream ticket card. Personal and shared pages retain the same colors, typography and ticket details.
+- Email authentication, personal UID isolation, storage, group invitations and accounting calculations are unchanged.
 
-Validation: 25 frontend/auth/theme tests passed locally, including real-handler mocks for rejected, pending and successful authentication. Login/register, password visibility, five interior pages and sample statistics/settlement were inspected in the browser. The earlier 27 Firestore Emulator regressions remain unchanged and run in CI.
+Validation for this layout correction:
+- 40 frontend/auth/model/integration checks passed locally.
+- Browser layout inspection at 320×740, 402×874, 430×932, 874×402 and 1280×800 found no horizontal overflow, no canvas transform and visible bottom navigation (allowing browser subpixel rounding).
+- Inspected the login screen and personal entry form at phone size. No physical iPhone/Safari hardware test is claimed.
+- Firestore rules are unchanged; existing security checks remain in CI.
 
-Deployment is still pending merge of PR #1; security rules were already published. Existing clients should refresh after the matching frontend is deployed.
+The standalone daily-preview.html is explicitly labeled as sample data and remains independent of the authenticated production entry point.
