@@ -7,7 +7,7 @@
     "firebase-tools": "14.25.0"
   },
   "scripts": {
-    "test": "node --test tests/frontend.test.mjs tests/auth-theme.test.mjs",
+    "test": "node --test tests/frontend.test.mjs tests/auth-theme.test.mjs tests/daily-model.test.mjs",
     "test:rules": "firebase emulators:exec --only firestore --project demo-tallo-security \"node --test tests/firestore.test.mjs\""
   }
 }
