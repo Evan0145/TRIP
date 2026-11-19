@@ -125,3 +125,47 @@ for(const [label,patch] of [['decimal',{amount:1.5}],['negative',{amount:-1}],['
 test('private ledger income accepted and prior entries cannot be overwritten or deleted',async()=>{
  const p=doc(db('owner'),'users/owner/entries/P1');await assertSucceeds(setDoc(p,{...personalEntry(),type:'income'}));await assertFails(updateDoc(p,{amount:1}));await assertFails(deleteDoc(p));
 });
+
+const categoryId='c_11111111-1111-4111-8111-111111111111',accountId='a_22222222-2222-4222-8222-222222222222';
+const catalogData=()=>({label:'Coffee',icon:'☕',color:'#1F7A52',archived:false,updatedAt:Date.now()});
+test('custom catalogs are private and schema-validated, archive replaces deletion',async()=>{
+ for(const [kind,id] of [['categories',categoryId],['accounts',accountId]]){
+  const ref=d=>doc(d,'users/owner/'+kind+'/'+id);
+  await assertFails(setDoc(ref(env.unauthenticatedContext().firestore()),catalogData()));
+  await assertFails(setDoc(ref(db('outsider')),catalogData()));
+  await assertSucceeds(setDoc(ref(db('owner')),catalogData()));
+  await assertFails(getDoc(ref(db('outsider'))));await assertFails(getDoc(ref(env.unauthenticatedContext().firestore())));
+  await assertSucceeds(getDoc(ref(db('owner'))));
+  await assertSucceeds(updateDoc(ref(db('owner')),{label:'Renamed',archived:true}));
+  await assertFails(deleteDoc(ref(db('owner'))));
+  for(const patch of [{label:''},{label:'x'.repeat(25)},{icon:'x'.repeat(17)},{color:'red'},{archived:'true'},{updatedAt:-1},{admin:true}])await assertFails(setDoc(ref(db('owner')),{...catalogData(),...patch}));
+ }
+ await assertFails(setDoc(doc(db('owner'),'users/owner/accounts/shared'),catalogData()));
+ await assertFails(setDoc(doc(db('owner'),'users/owner/categories/bogus'),catalogData()));
+});
+test('custom entry references must exist in same owner catalog and be active',async()=>{
+ const d=db('owner'),p=doc(d,'users/owner/entries/P1'),record={...personalEntry(),category:categoryId,account:accountId};
+ await assertFails(setDoc(p,record));
+ await assertSucceeds(setDoc(doc(d,'users/owner/categories/'+categoryId),catalogData()));
+ await assertFails(setDoc(p,record));
+ await assertSucceeds(setDoc(doc(d,'users/owner/accounts/'+accountId),catalogData()));
+ await assertSucceeds(setDoc(p,record));
+ await assertSucceeds(updateDoc(doc(d,'users/owner/categories/'+categoryId),{archived:true}));
+ await assertSucceeds(getDoc(p));
+ await assertFails(setDoc(doc(d,'users/owner/entries/P2'),{...record,id:'P2'}));
+ await assertSucceeds(updateDoc(doc(d,'users/owner/categories/'+categoryId),{archived:false}));
+ await assertSucceeds(updateDoc(doc(d,'users/owner/accounts/'+accountId),{archived:true}));
+ await assertFails(setDoc(doc(d,'users/owner/entries/P2'),{...record,id:'P2'}));
+ const foreign=doc(db('outsider'),'users/outsider/entries/P1');await assertFails(setDoc(foreign,record));
+});
+test('builtin defaults stay usable; renamed IDs and archived defaults are enforced',async()=>{
+ const d=db('owner');
+ await assertSucceeds(setDoc(doc(d,'users/owner/categories/food'),{...catalogData(),label:'Meals'}));
+ await assertSucceeds(setDoc(doc(d,'users/owner/entries/P1'),personalEntry()));
+ await assertSucceeds(updateDoc(doc(d,'users/owner/categories/food'),{archived:true}));
+ await assertFails(setDoc(doc(d,'users/owner/entries/P2'),{...personalEntry(),id:'P2'}));
+ await assertSucceeds(getDoc(doc(d,'users/owner/entries/P1')));
+ await assertSucceeds(updateDoc(doc(d,'users/owner/categories/food'),{archived:false}));
+ await assertSucceeds(setDoc(doc(d,'users/owner/accounts/cash'),{...catalogData(),archived:true}));
+ await assertFails(setDoc(doc(d,'users/owner/entries/P2'),{...personalEntry(),id:'P2'}));
+});

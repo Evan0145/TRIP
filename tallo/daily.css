@@ -184,3 +184,25 @@ button{cursor:pointer}
 }
 
 .daily-preview-badge[data-action="arrival"]{font-size:11px;font-weight:600;min-height:40px;padding:6px 11px;cursor:pointer}
+
+/* Personal categories and payment methods. */
+.field-manage{border:0;background:none;color:#1F7A52;padding:8px 0;min-height:40px;font:inherit;font-size:12px;text-align:left}
+.custom-item{gap:12px;min-height:74px}
+.custom-item-icon{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:24px;flex:none}
+.custom-item-name{flex:1;min-width:0;overflow-wrap:anywhere;font-size:15px}
+.custom-item-name small{display:block;font-size:11px;margin-top:5px;line-height:1.6}
+.custom-item.archived{opacity:.65}
+.item-icon-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin:8px 0 20px}
+.item-icon-grid button{min-height:44px;border:1px solid #D9D2BC;background:#FFFEF8;border-radius:10px;font-size:23px;padding:5px}
+.item-icon-grid button[aria-pressed=true]{border:2px solid #1F7A52;background:#eaf1e6}
+.item-color-row{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0 18px}
+.item-color-row button{width:44px;height:44px;border:4px solid #FFFEF8;background:var(--item-color);border-radius:50%;outline:1px solid #D9D2BC}
+.item-color-row button[aria-pressed=true]{outline:2px solid #17251F}
+.item-archive{display:flex;gap:10px;align-items:center;font-size:13px;margin:18px 0;color:#47624f;line-height:1.7}
+.item-archive input{width:22px;height:22px;accent-color:#1F7A52;flex:none}
+#itemForm .daily-field input{width:100%;min-width:0;box-sizing:border-box;font-size:16px}
+.daily-category-grid button{min-width:0;overflow-wrap:anywhere;padding-inline:4px}
+.daily-category-grid .item-add{border-style:dashed;color:#1F7A52}
+.daily-category-grid button:disabled{opacity:.5}
+.preview-modal:has(#itemForm){z-index:100}
+.preview-modal:has(#itemForm) section{overscroll-behavior:contain}
