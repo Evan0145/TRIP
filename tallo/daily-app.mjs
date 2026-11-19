@@ -119,10 +119,10 @@ document.addEventListener('click',event=>{
 document.addEventListener('submit',async event=>{
  const form=event.target;if(!form.closest('#dailyApp'))return;event.preventDefault();if(state.busy)return;
  state.busy=true;state.error='';const buttons=[...form.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);
- let status=document.createElement('p');status.className='daily-save-status';status.setAttribute('role','status');status.textContent='正在儲存，請勿關閉頁面…';form.append(status);
+ const status=document.createElement('div');status.className='daily-save-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.innerHTML='<div class="save-ticket"><div class="save-rail" aria-hidden="true">'+TRAIN+'</div><strong>正在儲存</strong><span>江之電替你送達這筆日常</span></div>';document.body.append(status);form.setAttribute('aria-busy','true');
  try{if(form.id==='dailyEntry')await persistEntry();else if(form.id==='budgetForm')await persistBudget(form);else if(form.id==='itemForm')await persistItem(form);else if(form.id==='deleteEntryForm')await deleteEntry();else if(form.id==='restoreEntryForm')await restoreEntry();}
  catch(e){if(form.id==='itemForm')captureEditor();state.error=e.message;render(true);}
- finally{state.busy=false;status.remove();buttons.forEach(b=>b.disabled=false);}
+ finally{state.busy=false;status.remove();form.removeAttribute('aria-busy');buttons.forEach(b=>b.disabled=false);}
 });
 
 
