@@ -156,7 +156,7 @@ table.cat-table td{padding:6px 0;font-size:13.5px;}
 .subhead h2{font-size:20px;}
 code{font-family:'IBM Plex Mono',monospace;background:var(--paper-dark);padding:1px 5px;border-radius:4px;}
 </style>
-<link rel="stylesheet" href="enoden.css?v=responsive-20261119"><link rel="stylesheet" href="daily.css?v=custom-20261119">
+<link rel="stylesheet" href="enoden.css?v=responsive-20261119"><link rel="stylesheet" href="daily.css?v=entries-20261119">
 </head>
 <body>
 <div id="siteRoot"><section class="site-shell" aria-label="Tallo 江之電旅行帳本"><div class="site-scroll" id="phoneScroll"><div id="app"></div></div></section></div>
@@ -164,7 +164,7 @@ code{font-family:'IBM Plex Mono',monospace;background:var(--paper-dark);padding:
 <script type="module">
 import {initArrival,showArrival} from "./arrival.mjs?v=arrival-20261119";
 initArrival();
-import {mountDaily,leaveDaily} from "./daily-app.mjs?v=custom-20261119";
+import {mountDaily,leaveDaily} from "./daily-app.mjs?v=entries-20261119";
 
 /* ============================================================
    旅行分帳(App 版:登入 → 底部導覽列)
@@ -178,7 +178,7 @@ const FB = "https://www.gstatic.com/firebasejs/10.12.2/";
 const GOOGLE_SIGN_IN_ENABLED = false;
 let loadError = null;
 let initializeApp, getFirestore, doc, collection, query, where, onSnapshot, getDoc, setDoc, updateDoc,
-  deleteDoc, arrayUnion, arrayRemove, writeBatch, getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+  deleteDoc, arrayUnion, arrayRemove, writeBatch, runTransaction, getAuth, onAuthStateChanged, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, updateProfile, signOut, GoogleAuthProvider, signInWithPopup,
   setPersistence, browserLocalPersistence;
 try {
@@ -186,7 +186,7 @@ try {
     import(FB + "firebase-app.js"), import(FB + "firebase-firestore.js"), import(FB + "firebase-auth.js")
   ]);
   ({ initializeApp } = m1);
-  ({ getFirestore, doc, collection, query, where, onSnapshot, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, writeBatch } = m2);
+  ({ getFirestore, doc, collection, query, where, onSnapshot, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, writeBatch, runTransaction } = m2);
   ({ getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence } = m3);
 } catch (e) { loadError = String(e && e.message || e); }
 
@@ -1202,7 +1202,7 @@ function renderImport(){
 function render(){
   if(state.screen === "app" && state.tab === "daily"){
     if(!document.getElementById('dailyApp')) { document.getElementById('app').innerHTML='<div id="dailyApp"></div>';
-    mountDaily({user:state.user,db,auth,api:{doc,collection,query,where,onSnapshot,setDoc},logout:doLogout,arrival:showArrival,goShared:(mode,gid)=>{
+    mountDaily({user:state.user,db,auth,api:{doc,collection,query,where,onSnapshot,setDoc,runTransaction},logout:doLogout,arrival:showArrival,goShared:(mode,gid)=>{
       if(gid && state.groups.some(g=>g.id===gid)) selectGroup(gid,null);
       state.tab=mode==='add'?'add':'me'; state.meSub=null;state.sheet=null;
       if(mode==='add')state.form={...state.form,amount:'',note:'',date:today()};render();

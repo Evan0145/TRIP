@@ -1,5 +1,5 @@
 
-import {CATEGORIES,money,summarize,validateRecord,parseAmount,chartDays,sharedRecordRows,DEFAULT_ACCOUNTS,ITEM_ICONS,ITEM_COLORS,catalogItems,catalogItem,checkCatalogChange} from "./daily-model.mjs?v=custom-20261119";
+import {CATEGORIES,money,summarize,validateRecord,parseAmount,chartDays,sharedRecordRows,DEFAULT_ACCOUNTS,ITEM_ICONS,ITEM_COLORS,catalogItems,catalogItem,checkCatalogChange} from "./daily-model.mjs?v=entries-20261119";
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 const currentMonth=today().slice(0,7),monthTitle=m=>Number(m.slice(0,4))+' 年 '+Number(m.slice(5))+' 月';
@@ -12,7 +12,7 @@ const ICON={
 };
 const TABS=[['home','首頁'],['list','明細'],['stats','統計'],['split','分帳'],['me','我的']];
 const TRAIN='<svg class="coast-train" viewBox="0 0 210 55" aria-hidden="true"><rect x="3" y="7" width="204" height="34" rx="9" fill="#1F7A52"/><rect x="3" y="24" width="204" height="9" fill="#FFF3C4"/>'+Array.from({length:7},(_,i)=>'<rect x="'+(12+i*27)+'" y="12" width="20" height="9" rx="2" fill="#DFF6FF"/>').join('')+'<circle cx="25" cy="45" r="5" fill="#26372c"/><circle cx="185" cy="45" r="5" fill="#26372c"/><text x="108" y="39" text-anchor="middle" font-size="5" fill="#FFF3C4" letter-spacing="2">ENODEN</text></svg>';
-let state={view:'home',month:currentMonth,budget:18000,filter:'all',kind:'all',returnView:'home',categoryItems:[],accountItems:[],customKind:'categories',editor:null,records:[],groups:[],draft:null,modal:null,error:'',toast:'',syncError:''};
+let state={view:'home',month:currentMonth,budget:18000,filter:'all',kind:'all',returnView:'home',categoryItems:[],accountItems:[],customKind:'categories',editor:null,editOriginal:null,deletedEntries:[],records:[],groups:[],draft:null,modal:null,error:'',toast:'',syncError:''};
 let toastTimer;
 const own=t=>t.amount;
 const categories=()=>catalogItems(CATEGORIES,state.categoryItems);
@@ -29,7 +29,7 @@ function header(title,subtitle,add=true){return '<header class="daily-header"><d
 function nav(){return '<nav class="daily-nav" aria-label="主要導覽">'+TABS.map(([id,label])=>'<button data-action="nav" data-view="'+id+'" class="'+(state.view===id?'active':'')+'" aria-current="'+(state.view===id?'page':'false')+'"><svg viewBox="0 0 24 24" aria-hidden="true">'+ICON[id]+'</svg>'+label+'</button>').join('')+'</nav>';}
 function row(t){
  const c=cat(t.category);
- return '<div class="record-item"><div class="record-emoji">'+(t.type==='income'?'↙':esc(c.icon))+'</div><div class="record-text"><strong>'+esc(t.note||c.label)+((t.split||t.shared)?'<span class="shared-mark">分帳</span>':'')+'</strong><small>'+esc(t.date.slice(5).replace('-','/'))+' · '+esc(account(t.account).label)+(t.split?' · 我負擔 '+money(own(t)):'')+'</small></div><div class="record-value '+(t.type==='income'?'income':'')+'">'+(t.type==='income'?'+':'−')+money(own(t))+'</div></div>';
+ return '<button type="button" class="record-item record-button" data-action="'+(t.shared?'shared':'edit-entry')+'" '+(t.shared?'data-id="'+esc(t.groupId)+'"':'data-id="'+esc(t.id)+'"')+' aria-label="'+esc((t.shared?'開啟共用帳本：':'修改明細：')+(t.note||c.label)+' '+money(t.amount)+' 元')+'"><div class="record-emoji">'+(t.type==='income'?'↙':esc(c.icon))+'</div><div class="record-text"><strong>'+esc(t.note||c.label)+((t.split||t.shared)?'<span class="shared-mark">分帳</span>':'')+'</strong><small>'+esc(t.date.slice(5).replace('-','/'))+' · '+esc(account(t.account).label)+(t.split?' · 我負擔 '+money(own(t)):'')+'</small></div><div class="record-value '+(t.type==='income'?'income':'')+'">'+(t.type==='income'?'+':'−')+money(own(t))+'</div><span class="record-chevron" aria-hidden="true">›</span></button>';
 }
 function recent(rows,max){const sorted=[...rows].reverse().sort((a,b)=>b.date.localeCompare(a.date));return sorted.slice(0,max).map(row).join('');}
 function home(){
@@ -39,7 +39,7 @@ function home(){
 function ledger(){
  const s=monthRows(),filtered=s.rows.filter(t=>(state.filter==='all'||t.category===state.filter)&&(state.kind==='all'||t.type===state.kind));
  const days=[...new Set(filtered.map(t=>t.date))].sort().reverse();
- return header('日常明細','每一筆，都有生活的樣子。')+'<main class="daily-body"><div class="month-strip">'+monthNav()+'<span class="mini-label">'+filtered.length+' 筆</span></div><div class="station-card two-numbers"><div><span class="mini-label">本月支出</span><strong>−'+money(s.expense)+'</strong></div><div><span class="mini-label">本月收入</span><strong style="color:#1F7A52">＋'+money(s.income)+'</strong></div></div><div class="filter-row" aria-label="收支篩選">'+[['all','全部'],['expense','支出'],['income','收入']].map(([id,label])=>'<button class="'+(state.kind===id?'active':'')+'" data-action="kind" data-id="'+id+'">'+label+'</button>').join('')+'</div><div class="filter-row" aria-label="分類篩選"><button data-action="filter" data-id="all" class="'+(state.filter==='all'?'active':'')+'">所有分類</button>'+categories().map(c=>'<button data-action="filter" data-id="'+c.id+'" class="'+(state.filter===c.id?'active':'')+'">'+esc(c.label)+'</button>').join('')+'</div>'+days.map(day=>{const ts=filtered.filter(t=>t.date===day);return '<div class="day-label"><span>'+esc(day.slice(5).replace('-',' / '))+'</span><span>'+ts.length+' 筆紀錄</span></div><div class="record-list">'+recent(ts,1000)+'</div>';}).join('')+(!days.length?'<div class="daily-empty">目前條件下還沒有紀錄。</div>':'')+'</main>';
+ return header('日常明細','每一筆，都有生活的樣子。')+'<main class="daily-body"><div class="month-strip">'+monthNav()+'<span class="mini-label">'+filtered.length+' 筆</span></div><div class="section-row"><span class="mini-label">點選個人明細即可修改或刪除</span><button data-action="trash">最近刪除 ›</button></div><div class="station-card two-numbers"><div><span class="mini-label">本月支出</span><strong>−'+money(s.expense)+'</strong></div><div><span class="mini-label">本月收入</span><strong style="color:#1F7A52">＋'+money(s.income)+'</strong></div></div><div class="filter-row" aria-label="收支篩選">'+[['all','全部'],['expense','支出'],['income','收入']].map(([id,label])=>'<button class="'+(state.kind===id?'active':'')+'" data-action="kind" data-id="'+id+'">'+label+'</button>').join('')+'</div><div class="filter-row" aria-label="分類篩選"><button data-action="filter" data-id="all" class="'+(state.filter==='all'?'active':'')+'">所有分類</button>'+categories().map(c=>'<button data-action="filter" data-id="'+c.id+'" class="'+(state.filter===c.id?'active':'')+'">'+esc(c.label)+'</button>').join('')+'</div>'+days.map(day=>{const ts=filtered.filter(t=>t.date===day);return '<div class="day-label"><span>'+esc(day.slice(5).replace('-',' / '))+'</span><span>'+ts.length+' 筆紀錄</span></div><div class="record-list">'+recent(ts,1000)+'</div>';}).join('')+(!days.length?'<div class="daily-empty">目前條件下還沒有紀錄。</div>':'')+'</main>';
 }
 function stats(){
  const s=monthRows(),expenses=s.rows.filter(t=>t.type==='expense'),items=categories().map(c=>({...c,total:expenses.filter(t=>t.category===c.id).reduce((a,t)=>a+own(t),0)})).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
@@ -53,29 +53,35 @@ function splitPage(){
  return header('一起分帳','聚餐、共同生活與旅行，需要時再加入。',false)+'<main class="daily-body"><section class="split-intro"><div class="graphic">🍽️</div><h2>一起花，也能算清楚。</h2><p>共用帳本可邀請朋友、記錄代墊與計算結算。<br>個人統計只計入自己應負擔的部分。</p><div class="split-actions"><button data-action="shared" data-mode="create">＋ 建立分帳</button><button data-action="shared" data-mode="join">加入朋友的帳</button></div></section><section class="station-card two-numbers"><div><span class="mini-label">共用帳本</span><strong>'+state.groups.length+' 本</strong></div><div><span class="mini-label">'+(net<0?'我待付':'我待收')+'</span><strong>NT$ '+money(Math.abs(net))+'</strong></div></section><div class="section-row"><h2>我的分帳</h2></div>'+state.groups.map(g=>'<section class="station-card split-group" style="margin-bottom:12px"><h3>'+esc(g.name)+'</h3><p>'+g.memberUids.length+' 位已加入的成員</p><button class="btn ghost full" data-action="shared" data-id="'+esc(g.id)+'">進入共用帳本 ›</button></section>').join('')+(!state.groups.length?'<div class="daily-empty">尚未建立或加入共用帳本。</div>':'')+'<p class="daily-footer-note">這裡顯示帳目計算，不會執行實際轉帳。<br>同名成員可能造成歸屬不明，請在共用帳本使用不同名字。</p></main>';
 }
 function me(){
- return header('我的生活帳本','把記帳，調整成適合自己的樣子。',false)+'<main class="daily-body"><section class="station-card profile-row"><div class="profile-circle">'+esc((ctx?.user.displayName||'我').charAt(0))+'</div><div><h2>'+esc(ctx?.user.displayName||'日常旅人')+'</h2><div class="mini-label">個人帳本 · 新台幣 TWD</div></div></section><div class="section-row"><h2>這個月的計畫</h2></div><section class="station-card"><button class="settings-row" data-action="budget-modal"><span>每月預算</span><small>NT$ '+money(state.budget)+'　›</small></button><div class="settings-row"><span>統計範圍</span><small>我的個人負擔</small></div></section><div class="section-row"><h2>我的帳戶</h2><span class="mini-label">用來區分付款方式</span></div><section class="station-card">'+[...accounts(),{id:'shared',label:'共用分帳',icon:'👥'}].map(({id,...a})=>'<div class="account-row"><span>'+esc(a.icon)+'</span><div><strong>'+esc(a.label)+'</strong><small>本月 '+state.records.filter(t=>t.account===id&&t.date.slice(0,7)===state.month).length+' 筆紀錄</small></div></div>').join('')+'</section><div class="section-row"><h2>偏好設定</h2></div><section class="station-card"><button class="settings-row" data-action="customize"><span>分類與付款方式</span><small>自訂名稱與圖標　›</small></button><div class="settings-row"><span>主題</span><small>江之電 · 海岸白天</small></div><button class="settings-row" data-action="arrival"><span>江之電進場畫面</span><small>重播　›</small></button><div class="settings-row"><span>記帳預設</span><small>個人支出</small></div><button class="settings-row" data-action="logout"><span>登出帳號</span><small>›</small></button></section><p class="daily-footer-note">Tallo — 日常的每一站<br>帳目儲存在自己的 Firebase 帳號中。</p></main>';
+ return header('我的生活帳本','把記帳，調整成適合自己的樣子。',false)+'<main class="daily-body"><section class="station-card profile-row"><div class="profile-circle">'+esc((ctx?.user.displayName||'我').charAt(0))+'</div><div><h2>'+esc(ctx?.user.displayName||'日常旅人')+'</h2><div class="mini-label">個人帳本 · 新台幣 TWD</div></div></section><div class="section-row"><h2>這個月的計畫</h2></div><section class="station-card"><button class="settings-row" data-action="budget-modal"><span>每月預算</span><small>NT$ '+money(state.budget)+'　›</small></button><div class="settings-row"><span>統計範圍</span><small>我的個人負擔</small></div></section><div class="section-row"><h2>我的帳戶</h2><span class="mini-label">用來區分付款方式</span></div><section class="station-card">'+[...accounts(),{id:'shared',label:'共用分帳',icon:'👥'}].map(({id,...a})=>'<div class="account-row"><span>'+esc(a.icon)+'</span><div><strong>'+esc(a.label)+'</strong><small>本月 '+state.records.filter(t=>t.account===id&&t.date.slice(0,7)===state.month).length+' 筆紀錄</small></div></div>').join('')+'</section><div class="section-row"><h2>偏好設定</h2></div><section class="station-card"><button class="settings-row" data-action="trash"><span>最近刪除</span><small>可復原明細　›</small></button><button class="settings-row" data-action="customize"><span>分類與付款方式</span><small>自訂名稱與圖標　›</small></button><div class="settings-row"><span>主題</span><small>江之電 · 海岸白天</small></div><button class="settings-row" data-action="arrival"><span>江之電進場畫面</span><small>重播　›</small></button><div class="settings-row"><span>記帳預設</span><small>個人支出</small></div><button class="settings-row" data-action="logout"><span>登出帳號</span><small>›</small></button></section><p class="daily-footer-note">Tallo — 日常的每一站<br>帳目儲存在自己的 Firebase 帳號中。</p></main>';
 }
 function draft(){return state.draft??{type:'expense',amount:'',category:activeCategories()[0]?.id,account:activeAccounts()[0]?.id,date:today(),note:'',split:false,count:3,group:state.groups[0]?.id};}
 function addPage(){
- const d=draft();
- return '<header class="daily-header"><div class="heading-line"><div style="display:flex;align-items:center"><button class="daily-back" data-action="back" aria-label="返回">‹</button><div><h1>記一筆日常</h1><p>先記下來，再繼續今天的旅程。</p></div></div><span class="group-pill">個人帳本</span></div></header><form id="dailyEntry" class="daily-form">'+(state.error?'<div class="daily-error" role="alert">'+esc(state.error)+'</div>':'')+'<div class="type-segment"><button type="button" class="'+(d.type==='expense'?'active':'')+'" data-action="entry-type" data-id="expense">支出</button><button type="button" class="'+(d.type==='income'?'active':'')+'" data-action="entry-type" data-id="income">收入</button></div><div class="daily-amount"><label for="entryAmount">金額 / AMOUNT</label><div class="amount-input-row"><span>NT$</span><input id="entryAmount" name="amount" inputmode="numeric" type="text" value="'+esc(d.amount)+'" placeholder="0" autocomplete="off" required aria-label="金額"></div></div><div class="daily-label">分類</div><div class="daily-category-grid">'+categories().filter(c=>!c.archived||c.id===d.category).map(c=>'<button type="button" '+(c.archived?'disabled ':'')+'data-action="entry-category" data-id="'+c.id+'" class="'+(c.id===d.category?'active':'')+'"><span>'+esc(c.icon)+'</span>'+esc(c.label)+'</button>').join('')+'<button type="button" data-action="item-new" data-kind="categories" class="item-add"><span>＋</span>新增分類</button></div><div class="daily-field-pair"><div class="daily-field"><label for="entryDate">日期</label><input id="entryDate" name="date" type="date" value="'+esc(d.date)+'" required></div><div class="daily-field"><label for="entryAccount">'+(d.type==='expense'?'付款帳戶':'存入帳戶')+'</label><select id="entryAccount" name="account">'+accounts().filter(a=>!a.archived||a.id===d.account).map(({id,...a})=>'<option value="'+id+'" '+(id===d.account?'selected':'')+(a.archived?' disabled':'')+'>'+esc(a.icon)+' '+esc(a.label)+(a.archived?'（已停用，請改選）':'')+'</option>').join('')+'</select><button type="button" class="field-manage" data-action="item-new" data-kind="accounts">＋ 新增付款方式</button></div></div><div class="daily-field"><label for="entryNote">備註</label><input id="entryNote" name="note" value="'+esc(d.note)+'" placeholder="這一筆，記下什麼日常？" maxlength="120"></div>'+(d.type==='expense'?'<button class="split-toggle" type="button" data-action="shared" data-mode="add"><span><strong>這筆要分帳</strong><small>前往共用帳本選擇付款人與分攤成員</small></span><span>›</span></button>':'')+'<div class="daily-save"><button type="submit">儲存'+(d.type==='income'?'收入':'這筆日常')+'</button></div></form>';
+ const d=draft(),editing=!!state.editOriginal;
+ return '<header class="daily-header"><div class="heading-line"><div style="display:flex;align-items:center"><button class="daily-back" data-action="back" aria-label="返回">‹</button><div><h1>'+(editing?'修改明細':'記一筆日常')+'</h1><p>'+(editing?'修正這筆日常，帳目與統計會一起更新。':'先記下來，再繼續今天的旅程。')+'</p></div></div><span class="group-pill">個人帳本</span></div></header><form id="dailyEntry" class="daily-form">'+(state.error?'<div class="daily-error" role="alert">'+esc(state.error)+'</div>':'')+'<div class="type-segment"><button type="button" class="'+(d.type==='expense'?'active':'')+'" data-action="entry-type" data-id="expense">支出</button><button type="button" class="'+(d.type==='income'?'active':'')+'" data-action="entry-type" data-id="income">收入</button></div><div class="daily-amount"><label for="entryAmount">金額 / AMOUNT</label><div class="amount-input-row"><span>NT$</span><input id="entryAmount" name="amount" inputmode="numeric" type="text" value="'+esc(d.amount)+'" placeholder="0" autocomplete="off" required aria-label="金額"></div></div><div class="daily-label">分類</div><div class="daily-category-grid">'+categories().filter(c=>!c.archived||c.id===d.category).map(c=>'<button type="button" '+(c.archived&&!(editing&&state.editOriginal.category===c.id)?'disabled ':'')+'data-action="entry-category" data-id="'+c.id+'" class="'+(c.id===d.category?'active':'')+'"><span>'+esc(c.icon)+'</span>'+esc(c.label)+'</button>').join('')+'<button type="button" data-action="item-new" data-kind="categories" class="item-add"><span>＋</span>新增分類</button></div><div class="daily-field-pair"><div class="daily-field"><label for="entryDate">日期</label><input id="entryDate" name="date" type="date" value="'+esc(d.date)+'" required></div><div class="daily-field"><label for="entryAccount">'+(d.type==='expense'?'付款帳戶':'存入帳戶')+'</label><select id="entryAccount" name="account">'+accounts().filter(a=>!a.archived||a.id===d.account).map(({id,...a})=>'<option value="'+id+'" '+(id===d.account?'selected':'')+(a.archived&&!(editing&&state.editOriginal.account===id)?' disabled':'')+'>'+esc(a.icon)+' '+esc(a.label)+(a.archived?(editing&&state.editOriginal.account===id?'（已停用）':'（已停用，請改選）'):'')+'</option>').join('')+'</select><button type="button" class="field-manage" data-action="item-new" data-kind="accounts">＋ 新增付款方式</button></div></div><div class="daily-field"><label for="entryNote">備註</label><input id="entryNote" name="note" value="'+esc(d.note)+'" placeholder="這一筆，記下什麼日常？" maxlength="120"></div>'+(d.type==='expense'&&!editing?'<button class="split-toggle" type="button" data-action="shared" data-mode="add"><span><strong>這筆要分帳</strong><small>前往共用帳本選擇付款人與分攤成員</small></span><span>›</span></button>':'')+(editing?'<button type="button" class="entry-delete" data-action="delete-entry">刪除這筆明細</button>':'')+'<div class="daily-save"><button type="submit">'+(editing?'儲存修改':'儲存'+(d.type==='income'?'收入':'這筆日常'))+'</button></div></form>';
 }
 function modal(){
  if(!state.modal)return '';
  let body='',title='';
+ if(state.modal==='delete-entry'||state.modal==='restore-entry'){
+  const deleting=state.modal==='delete-entry',e=deleting?state.editOriginal:state.deletedEntries.find(x=>x.id===state.restoreId);
+  if(!e)return '';
+  title=deleting?'刪除這筆明細？':'復原這筆明細？';
+  body='<p>'+esc(e.date)+' · '+esc(cat(e.category).label)+' · NT$ '+money(e.amount)+'</p><p>'+esc(e.note||'無備註')+'</p><p>'+(deleting?'刪除後不再計入帳目與統計，可從「最近刪除」復原。':'復原後會重新計入原日期所屬的月份與統計。')+'</p><form id="'+(deleting?'deleteEntryForm':'restoreEntryForm')+'"><button type="submit" class="modal-primary '+(deleting?'danger-primary':'')+'">'+(deleting?'確認刪除':'復原明細')+'</button><button type="button" class="modal-cancel" data-action="close-modal">取消</button></form>';
+ }
  if(state.modal==='item'){title=(state.editor.isNew?'新增':'編輯')+(state.editor.kind==='categories'?'分類':'付款方式');body=itemEditor();}
  if(state.modal==='budget'){title='每月的小小計畫';body='<p>設定每月支出預算，首頁會顯示還可以使用的金額。</p><form id="budgetForm"><div class="daily-field"><label for="budgetInput">每月預算（NT$）</label><input id="budgetInput" name="budget" type="number" min="1" max="10000000" value="'+state.budget+'" required></div><button class="modal-primary" type="submit">套用預算</button></form>';}
  return '<div class="preview-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><section><div class="row"><h2 id="modalTitle">'+title+'</h2><button class="auth-error-close" data-action="close-modal" aria-label="關閉">×</button></div>'+(state.error?'<div class="daily-error" role="alert">'+esc(state.error)+'</div>':'')+body+'</section></div>';
 }
 function render(preserve=false){
  const scroller=document.getElementById('phoneScroll'),y=scroller.scrollTop,modalY=document.querySelector('.preview-modal section')?.scrollTop||0;
- const views={home,list:ledger,stats,split:splitPage,me,add:addPage,customize:customizePage};
+ const views={home,list:ledger,stats,split:splitPage,me,add:addPage,customize:customizePage,trash:trashPage};
  const root=document.getElementById('dailyApp');if(!root)return;if(!readyEntries||!readyBudget||!readyCategories||!readyAccounts){root.innerHTML=state.syncError?'<div class="daily-error" role="alert">'+esc(state.syncError)+'<button data-action="retry">重新連線</button></div>':'<div class="spinner" role="status">正在同步個人帳本…</div>';return;}root.innerHTML=(state.syncError?'<div class="daily-error" role="alert">'+esc(state.syncError)+'</div>':'')+views[state.view]()+(state.view==='add'?'':nav())+modal()+(state.toast?'<div class="daily-toast" role="status">'+esc(state.toast)+'</div>':'');
  if(preserve){scroller.scrollTop=y;const sheet=document.querySelector('.preview-modal section');if(sheet)sheet.scrollTop=modalY;}
  if(state.modal&&!state.editor?.picked)setTimeout(()=>document.querySelector('.preview-modal input')?.focus(),0);
 }
 function startEntry(category,group){
- state.returnView=state.view;state.draft={type:'expense',amount:'',category:category||activeCategories()[0]?.id,account:activeAccounts()[0]?.id,date:today(),note:'',split:!!group,group:group||state.groups[0]?.id,count:state.groups.find(g=>g.id===group)?.count||3};navigate('add');
+ state.editOriginal=null;state.returnView=state.view;state.draft={type:'expense',amount:'',category:category||activeCategories()[0]?.id,account:activeAccounts()[0]?.id,date:today(),note:'',split:!!group,group:group||state.groups[0]?.id,count:state.groups.find(g=>g.id===group)?.count||3};navigate('add');
 }
 document.addEventListener('input',event=>{
  if(event.target.closest('#itemForm')&&state.editor){const t=event.target;if(['label','icon','archived'].includes(t.name))state.editor[t.name]=t.type==='checkbox'?t.checked:t.value;return;}
@@ -96,8 +102,12 @@ document.addEventListener('click',event=>{
  if(a==='item-edit')openItem(b.dataset.kind,b.dataset.id);
  if(a==='item-icon'||a==='item-color'){captureEditor();state.editor[a==='item-icon'?'icon':'color']=b.dataset.value;render(true);}
  if(a==='nav')navigate(b.dataset.view);
+ if(a==='edit-entry')editEntry(b.dataset.id);
+ if(a==='trash')navigate('trash');
+ if(a==='delete-entry'){state.modal='delete-entry';state.error='';render(true);}
+ if(a==='restore-entry'){state.restoreId=b.dataset.id;state.modal='restore-entry';state.error='';render(true);}
  if(a==='add')startEntry(b.dataset.category);
- if(a==='back'){state.draft=null;navigate(state.returnView);}
+ if(a==='back'){state.draft=null;state.editOriginal=null;navigate(state.returnView);}
  if(a==='filter'){state.filter=b.dataset.id;render(true);}
  if(a==='kind'){state.kind=b.dataset.id;render(true);}
  if(a==='month'){const [y,m]=state.month.split('-').map(Number),d=new Date(y,m-1+Number(b.dataset.step),1);state.month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');render(true);}
@@ -110,7 +120,7 @@ document.addEventListener('submit',async event=>{
  const form=event.target;if(!form.closest('#dailyApp'))return;event.preventDefault();if(state.busy)return;
  state.busy=true;state.error='';const buttons=[...form.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);
  let status=document.createElement('p');status.className='daily-save-status';status.setAttribute('role','status');status.textContent='正在儲存，請勿關閉頁面…';form.append(status);
- try{if(form.id==='dailyEntry')await persistEntry();else if(form.id==='budgetForm')await persistBudget(form);else if(form.id==='itemForm')await persistItem(form);}
+ try{if(form.id==='dailyEntry')await persistEntry();else if(form.id==='budgetForm')await persistBudget(form);else if(form.id==='itemForm')await persistItem(form);else if(form.id==='deleteEntryForm')await deleteEntry();else if(form.id==='restoreEntryForm')await restoreEntry();}
  catch(e){if(form.id==='itemForm')captureEditor();state.error=e.message;render(true);}
  finally{state.busy=false;status.remove();buttons.forEach(b=>b.disabled=false);}
 });
@@ -121,12 +131,13 @@ let readyEntries=false,readyBudget=false,readyCategories=false,readyAccounts=fal
 function syncError(e){state.syncError=e?.code==='permission-denied'?'沒有讀寫權限，請確認目前帳號及資料庫規則。':(e?.message||'同步失敗，請檢查連線');render(true);}
 function rebuild(){
  const allShared=[...shared.values()].flat();sharedPaid=allShared.reduce((s,e)=>s+e.paid,0);sharedOwed=allShared.reduce((s,e)=>s+e.owed,0);
- state.records=[...personal,...[...shared.values()].flat()];
+ state.deletedEntries=personal.filter(e=>e.deleted===true);
+ state.records=[...personal.filter(e=>e.deleted!==true),...[...shared.values()].flat()];
  state.sharedNet=sharedPaid-sharedOwed;
  if(state.view!=='add'&&!state.modal)render(true);
 }
 function clearDaily(){for(const stop of cleanups)stop();cleanups=[];for(const stops of groupStops.values())for(const stop of stops)stop();groupStops.clear();shared.clear();personal=[];userId=null;}
-export function leaveDaily(){clearDaily();state={view:'home',month:currentMonth,budget:18000,filter:'all',kind:'all',returnView:'home',categoryItems:[],accountItems:[],customKind:'categories',editor:null,records:[],groups:[],draft:null,modal:null,error:'',toast:'',syncError:''};}
+export function leaveDaily(){clearDaily();state={view:'home',month:currentMonth,budget:18000,filter:'all',kind:'all',returnView:'home',categoryItems:[],accountItems:[],customKind:'categories',editor:null,editOriginal:null,deletedEntries:[],records:[],groups:[],draft:null,modal:null,error:'',toast:'',syncError:''};}
 export function mountDaily(options){
  ctx=options;
  if(userId!==ctx.user.uid){
@@ -173,11 +184,13 @@ export function mountDaily(options){
  render(true);
 }
 async function persistEntry(){
- const d=draft(),record={id:crypto.randomUUID(),date:d.date,type:d.type,amount:parseAmount(d.amount),category:d.category,note:d.note.trim(),account:d.account,split:null,createdAt:Date.now()};
- validateRecord(record,{categories:categories(),accounts:accounts()});
+ const d=draft(),original=state.editOriginal;
+ const record={id:original?.id||crypto.randomUUID(),date:d.date,type:d.type,amount:parseAmount(d.amount),category:d.category,note:d.note.trim(),account:d.account,split:null,createdAt:original?.createdAt??Date.now()};
+ validateRecord(record,{categories:categories(),accounts:accounts()},original);
  if(!readyEntries||state.syncError)throw new Error('帳本尚未完成同步，請稍後重試');
- await ctx.api.setDoc(ctx.api.doc(ctx.db,'users',userId,'entries',record.id),record);
- state.month=record.date.slice(0,7);state.draft=null;state.view='home';state.error='';notify('已儲存這筆'+(record.type==='income'?'收入':'日常'));
+ if(original)await changeEntry(original,record);
+ else await ctx.api.setDoc(ctx.api.doc(ctx.db,'users',userId,'entries',record.id),record);
+ state.month=record.date.slice(0,7);state.draft=null;state.editOriginal=null;state.view=original?state.returnView:'home';state.error='';notify(original?'已儲存修改':'已儲存這筆'+(record.type==='income'?'收入':'日常'));
 }
 async function persistBudget(form){
  const n=Number(new FormData(form).get('budget'));
@@ -216,4 +229,36 @@ async function persistItem(){
  state[key]=[...(state[key]||[]).filter(x=>x.id!==id),item];
  if(state.view==='add'&&e.isNew)state.draft={...draft(),[e.kind==='categories'?'category':'account']:id};
  state.modal=null;state.editor=null;state.error='';notify('已儲存，設定會同步到此帳號');
+}
+
+function editEntry(id){
+ const e=personal.find(x=>x.id===id&&x.deleted!==true);
+ if(!e){notify('這筆明細已被刪除或不存在');return;}
+ state.editOriginal={...e};state.returnView=state.view;
+ state.draft={...e,amount:String(e.amount),split:false};navigate('add');
+}
+function trashPage(){
+ const rows=[...state.deletedEntries].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+ return header('最近刪除','刪除的個人明細會保留在這裡，需要時可復原。',false)+'<main class="daily-body"><section class="record-list">'+(rows.map(e=>'<div class="record-item"><span class="record-emoji">'+esc(cat(e.category).icon)+'</span><div class="record-text"><strong>'+esc(e.note||cat(e.category).label)+'</strong><small>'+esc(e.date)+' · '+esc(account(e.account).label)+'</small></div><span class="record-value">'+(e.type==='income'?'+':'−')+money(e.amount)+'</span><button class="restore-entry" data-action="restore-entry" data-id="'+esc(e.id)+'" aria-label="'+esc('復原 '+(e.note||cat(e.category).label))+'">復原</button></div>').join('')||'<div class="daily-empty">目前沒有已刪除的明細。</div>')+'</section><p class="daily-footer-note">這裡的明細不計入首頁、預算與統計。</p></main>';
+}
+async function changeEntry(original,values){
+ const ref=ctx.api.doc(ctx.db,'users',userId,'entries',original.id);
+ await ctx.api.runTransaction(ctx.db,async tx=>{
+  const snap=await tx.get(ref);
+  if(!snap.exists())throw new Error('這筆明細已不存在，請返回明細重新開啟');
+  const latest=snap.data();
+  if((latest.revision||0)!==(original.revision||0)||!!latest.deleted!==!!original.deleted)throw new Error('這筆明細已在其他畫面變更，請返回明細重新開啟後再修改');
+  tx.update(ref,{...values,deleted:values.deleted??false,revision:(latest.revision||0)+1,updatedAt:Date.now()});
+ });
+}
+async function deleteEntry(){
+ const original=state.editOriginal;if(!original)throw new Error('請先選擇要刪除的明細');
+ await changeEntry(original,{deleted:true});
+ state.modal=null;state.draft=null;state.editOriginal=null;state.view=state.returnView;notify('已刪除，可到「最近刪除」復原');
+}
+async function restoreEntry(){
+ const original=state.deletedEntries.find(x=>x.id===state.restoreId);
+ if(!original)throw new Error('這筆明細已復原或不存在');
+ await changeEntry(original,{deleted:false});
+ state.modal=null;state.restoreId=null;notify('明細已復原');
 }

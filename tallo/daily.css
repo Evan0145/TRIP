@@ -206,3 +206,11 @@ button{cursor:pointer}
 .daily-category-grid button:disabled{opacity:.5}
 .preview-modal:has(#itemForm){z-index:100}
 .preview-modal:has(#itemForm) section{overscroll-behavior:contain}
+
+.record-button{border:0;border-bottom:1px solid #eee8d9;background:transparent;color:inherit;width:100%;text-align:left;font:inherit;cursor:pointer}
+.record-button:focus-visible{outline:2px solid #1F7A52;outline-offset:-3px;border-radius:8px}
+.record-chevron{color:#718078;font-size:20px;flex:none}
+.entry-delete{width:100%;min-height:46px;background:#FFF0EE;color:#9B2C1C;border:1px solid #E7B7AD;border-radius:12px;font-size:14px;margin:14px 0}
+.preview-modal .danger-primary{background:#D63A22}
+.modal-cancel{width:100%;border:1px solid #D9D2BC;color:#47624f;background:#FFFEF8;border-radius:11px;min-height:44px;font-size:14px;margin-top:10px}
+.restore-entry{border:1px solid #D9D2BC;background:#FFFEF8;color:#1F7A52;border-radius:9px;min-height:42px;padding:6px 10px;font-size:12px;flex:none}
