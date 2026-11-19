@@ -21,10 +21,10 @@ export function shares(total,count){
  const cents=Math.round(total*100),base=Math.floor(cents/count),rest=cents%count;
  return Array.from({length:count},(_,i)=>(base+(i<rest?1:0))/100);
 }
-export function validateRecord(record){
+export function validateRecord(record, catalog={categories:CATEGORIES,accounts:DEFAULT_ACCOUNTS}){
  if(!['expense','income'].includes(record.type)||!Number.isSafeInteger(record.amount)||record.amount<=0||record.amount>10000000) throw new Error('請輸入 1 至 10,000,000 元的整數金額');
  if(!/^\d{4}-\d{2}-\d{2}$/.test(record.date)||Number.isNaN(Date.parse(record.date+'T00:00:00Z'))||new Date(record.date+'T00:00:00Z').toISOString().slice(0,10)!==record.date)throw new Error('請選擇有效日期');
- if(!CATEGORIES.some(c=>c.id===record.category)||!['cash','card','bank'].includes(record.account))throw new Error('請選擇分類與帳戶');
+ if(!catalog.categories.some(c=>c.id===record.category&&!c.archived)||!catalog.accounts.some(c=>c.id===record.account&&!c.archived))throw new Error('請選擇分類與帳戶');
  if(typeof record.note!=='string'||record.note.length>120)throw new Error('備註最多 120 字');
  if(record.split && (record.type!=='expense'||!Number.isInteger(record.split.count)||record.split.count<2||record.split.count>20))throw new Error('分帳人數需為 2 至 20 人');
  return record;
@@ -69,4 +69,33 @@ export function sharedRecordRows(gid,tid,trip,docs,name){
   const mine=Number(ps[name]||0),paid=e.payer===name?Number(e.amount):0;
   return {id:'shared:'+gid+':'+tid+':'+e.id,date:e.date,type:'expense',amount:mine,category:({FOOD:'food',TRANSPORT:'transport',HOTEL:'home',SHOPPING:'shopping',TICKET:'fun',OTHER:'other'})[e.category]||'other',note:e.note||trip.name,account:'shared',split:null,shared:true,paid,owed:mine,groupId:gid,tripId:tid};
  });
+}
+
+export const DEFAULT_ACCOUNTS=[
+ {id:'cash',label:'現金',icon:'👛',color:'#1F7A52'},
+ {id:'card',label:'信用卡',icon:'💳',color:'#648D88'},
+ {id:'bank',label:'銀行帳戶',icon:'🏦',color:'#6580A0'}
+];
+export const ITEM_ICONS=['🍜','🍱','🍽️','☕','🧋','🥐','🛒','🧺','🛍','👕','👟','💄','🏡','💡','📱','💻','🚃','🚌','🚕','🚗','🛵','🚲','✈️','⛽','🎟','🎮','🎬','🎵','📚','🎓','🌿','🏥','💊','🏋️','🐶','🐱','🎁','❤️','👶','👥','👛','💳','🏦','💵','🪙','📲','💰','💼','📈','🍀','🌊','⋯'];
+export const ITEM_COLORS=['#D63A22','#1F7A52','#A8823D','#648D88','#6580A0','#B77A69','#789559','#8A8474'];
+export function validateCatalogItem(item){
+ if(typeof item.label!=='string'||!item.label.trim()||item.label.length>24)throw new Error('名稱請填寫 1 至 24 字');
+ if(typeof item.icon!=='string'||!item.icon.trim()||item.icon.length>16||/[<>&"'\s]/u.test(item.icon))throw new Error('請挑選圖標，或輸入一個表情符號');
+ if(typeof item.color!=='string'||!/^#[0-9A-Fa-f]{6}$/.test(item.color))throw new Error('請選擇有效顏色');
+ if(typeof item.archived!=='boolean'||!Number.isFinite(item.updatedAt))throw new Error('項目格式不正確');
+ return {...item,label:item.label.trim()};
+}
+export function catalogItems(defaults,overrides=[]){
+ const map=new Map(defaults.map(x=>[x.id,{...x,archived:false}]));
+ for(const x of overrides){try{map.set(x.id,validateCatalogItem(x));}catch{}}
+ return [...map.values()];
+}
+export function catalogItem(items,id){
+ return items.find(x=>x.id===id)||{id,label:'未命名項目',icon:'⋯',color:'#8A8474',archived:true};
+}
+export function checkCatalogChange(items,item){
+ const valid=validateCatalogItem(item);
+ if(items.some(x=>x.id!==item.id&&x.label.trim()===valid.label))throw new Error('已有相同名稱，請換一個名稱');
+ if(valid.archived&&!items.some(x=>x.id!==item.id&&!x.archived))throw new Error('至少保留一個可用項目');
+ return valid;
 }
