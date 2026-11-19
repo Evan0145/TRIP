@@ -112,7 +112,12 @@ button{cursor:pointer}
 .daily-category-grid button span{font-size:20px}.daily-category-grid button.active{border:1.5px solid #1F7A52;background:#eaf1e6;color:#1F7A52}
 .daily-field{margin-bottom:15px}.daily-field label,.daily-label{display:block;font-size:11px;color:#6B7A6F;font-weight:600;margin:0 0 7px}
 .daily-field input,.daily-field select{background:#FFFEF8;border:1px solid #D9D2BC;border-radius:11px;padding:12px;font-size:13px}
-.daily-field-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.daily-field-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.daily-field-pair>.daily-field{min-width:0}
+.daily-field-pair input,.daily-field-pair select{box-sizing:border-box;display:block;width:100%;max-width:100%;min-width:0;height:52px;color:#17251F}
+.daily-field-pair input[type="date"]{-webkit-appearance:none;appearance:none;text-align:left}
+.daily-field-pair input[type="date"]::-webkit-date-and-time-value{min-width:0;text-align:left}
+@media(max-width:480px){.daily-field-pair{grid-template-columns:minmax(0,1fr);gap:0}}
 .split-toggle{width:100%;border:1px solid #E6DFC8;background:#FFFEF8;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between;text-align:left;margin:2px 0 10px}
 .split-toggle strong{display:block;font-size:12px;font-weight:600}.split-toggle small{display:block;font-size:10px;color:#718078;margin-top:5px}
 .toggle-switch{width:35px;height:21px;border-radius:99px;background:#D9D2BC;position:relative;flex:none;margin-left:12px}
