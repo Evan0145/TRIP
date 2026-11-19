@@ -142,7 +142,15 @@ button{cursor:pointer}
 .daily-field input,.daily-field select{width:100%;min-width:0}
 .week-chart{gap:3px}.week-chart div{min-width:0;font-size:7px}.chart-legend{gap:6px}
 
-.return-daily{position:absolute;right:16px;top:47px;z-index:3;background:#FFFEF8;border:1px solid #D9D2BC;border-radius:20px;padding:5px 10px;color:#1F7A52;font-size:12px}.daily-save-status{position:fixed;bottom:80px;background:#FFF3C4;padding:12px;z-index:90;font-size:12px}
+.return-daily{position:absolute;right:16px;top:47px;z-index:3;background:#FFFEF8;border:1px solid #D9D2BC;border-radius:20px;padding:5px 10px;color:#1F7A52;font-size:12px}.daily-save-status{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:24px;background:#17251f24;backdrop-filter:blur(3px);font-size:14px}
+.save-ticket{width:min(300px,100%);padding:24px 22px 22px;border:1px solid #D9D2BC;border-radius:22px;background:#FFFEF8;color:#17251F;box-shadow:0 18px 60px #17251f26;text-align:center}
+.save-ticket strong{display:block;font-size:17px;letter-spacing:.08em;margin-top:14px}
+.save-ticket>span{display:block;font-size:12px;color:#718078;margin-top:7px;line-height:1.7}
+.save-rail{height:56px;position:relative;overflow:hidden;border-radius:12px;background:linear-gradient(#DFF3F7 0 68%,#81BECC 68% 80%,#E6DFC8 80%)}
+.save-rail:after{content:"";position:absolute;bottom:5px;left:0;right:0;border-top:2px solid #47624f55}
+.save-rail .coast-train{position:absolute;width:132px;height:35px;bottom:6px;left:0;right:auto;filter:none;animation:save-train-pass .75s linear infinite;will-change:transform}
+@keyframes save-train-pass{from{transform:translateX(-140px)}to{transform:translateX(300px)}}
+@media(prefers-reduced-motion:reduce){.save-rail .coast-train{animation:none;left:50%;transform:translateX(-50%);will-change:auto}.daily-save-status{backdrop-filter:none}}
 #app:has(#dailyApp){background:#F6F3E9}
 
 /* Content follows the viewport; iOS supplies its own physical safe areas. */
