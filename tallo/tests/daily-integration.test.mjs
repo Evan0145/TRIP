@@ -12,7 +12,7 @@ function runtime(){
  const imported=source.match(/import \{([^}]+)\}/)[1].split(',').map(x=>x.trim());
  for(const name of Object.keys(model))if(!imported.includes(name))delete globals[name];
  const body=source.replace(/import \{[^}]+\} from [^;]+;/,'').replace(/export function /g,'function ');
- const api=vm.runInNewContext(body+'\n({mountDaily,leaveDaily,getState:()=>state,navigate,startEntry,openItem,persistItem,persistEntry});',globals);
+ const api=vm.runInNewContext(body+'\n({mountDaily,leaveDaily,getState:()=>state,navigate,startEntry,openItem,persistItem,persistEntry,editEntry,deleteEntry,restoreEntry});',globals);
  return {api,root,forms};
 }
 const snap=(data,id)=>({id,data:()=>data});
@@ -83,4 +83,52 @@ test('catalog write failures keep editor and draft; account switch removes prior
  api.openItem('accounts');forms.set('itemForm',{values:{label:'電子支付',icon:'📲'}});
  await assert.rejects(api.persistItem(),/offline/);assert.equal(api.getState().modal,'item');assert.equal(api.getState().editor.label,'電子支付');
  api.mountDaily({user:{uid:'other'},db:{},api:fake.api});assert.equal(api.getState().draft,null);assert.equal(api.getState().categoryItems.length,0);assert.equal(api.getState().accountItems.length,0);assert.equal(api.getState().editor,null);api.leaveDaily();
+});
+
+function editAdapter(){
+ const fake=adapter(),entry={id:'P',date:'2026-11-19',type:'expense',amount:80,category:'food',note:'Coffee',account:'cash',split:null,createdAt:1},saved=new Map([['P',entry]]);
+ const emit=()=>fake.callbacks.get('users/owner/entries')({docs:[...saved.values()].map(x=>snap(x,x.id))});
+ fake.api.runTransaction=async(_db,fn)=>{
+  const pending=[];
+  await fn({get:async ref=>{const item=saved.get(ref.path.split('/').at(-1));return{exists:()=>!!item,data:()=>({...item})};},
+   update:(ref,values)=>pending.push({id:ref.path.split('/').at(-1),values})});
+  for(const {id,values}of pending)saved.set(id,{...saved.get(id),...values});emit();
+ };
+ return {...fake,saved,emit};
+}
+test('editing existing entries preserves ID/createdAt and updates month, income and payment method',async()=>{
+ const {api,root}=runtime(),fake=editAdapter();
+ api.mountDaily({user:{uid:'owner'},db:{},api:fake.api});fake.emit();
+ api.navigate('list');api.editEntry('P');assert(root.innerHTML.includes('修改明細'));assert(root.innerHTML.includes('儲存修改'));
+ Object.assign(api.getState().draft,{amount:'500',date:'2026-10-31',type:'income',account:'bank',note:'Corrected'});
+ await api.persistEntry();const e=fake.saved.get('P');
+ assert.equal(fake.saved.size,1);assert.equal(e.id,'P');assert.equal(e.createdAt,1);assert.equal(e.revision,1);assert.equal(e.amount,500);assert.equal(e.account,'bank');assert.equal(e.type,'income');
+ assert.equal(api.getState().month,'2026-10');assert.equal(model.summarize(api.getState().records,'2026-10',100).income,500);assert.equal(api.getState().records.filter(x=>!x.shared).length,1);api.leaveDaily();
+});
+test('soft deletion removes totals and restoration returns exactly one original entry',async()=>{
+ const {api,root}=runtime(),fake=editAdapter();
+ api.mountDaily({user:{uid:'owner'},db:{},api:fake.api});fake.emit();const originalTotal=model.summarize(api.getState().records,'2026-11',1000).expense;
+ api.navigate('list');api.editEntry('P');await api.deleteEntry();
+ assert.equal(fake.saved.get('P').deleted,true);assert.equal(api.getState().deletedEntries.length,1);
+ assert.equal(model.summarize(api.getState().records,'2026-11',1000).expense,originalTotal-80);
+ api.navigate('trash');assert(root.innerHTML.includes('Coffee'));api.getState().restoreId='P';await api.restoreEntry();
+ assert.equal(api.getState().deletedEntries.length,0);assert.equal(fake.saved.get('P').revision,2);assert.equal(model.summarize(api.getState().records,'2026-11',1000).expense,originalTotal);api.leaveDaily();
+});
+test('failed and stale edits retain user draft and cannot overwrite newer data',async()=>{
+ const {api}=runtime(),fake=editAdapter();
+ api.mountDaily({user:{uid:'owner'},db:{},api:fake.api});fake.emit();api.editEntry('P');api.getState().draft.amount='77';
+ fake.saved.set('P',{...fake.saved.get('P'),amount:99,revision:1});fake.emit();
+ await assert.rejects(api.persistEntry(),/其他畫面/);assert.equal(api.getState().draft.amount,'77');assert.equal(fake.saved.get('P').amount,99);
+ fake.api.runTransaction=async()=>{throw new Error('offline')};await assert.rejects(api.deleteEntry(),/offline/);assert(api.getState().editOriginal);assert.equal(fake.saved.get('P').deleted,undefined);api.leaveDaily();
+});
+test('shared rows route to shared books and cannot be edited as private entries',()=>{
+ const {api,root}=runtime(),fake=adapter();api.mountDaily({user:{uid:'owner'},db:{},api:fake.api});api.navigate('list');
+ assert(root.innerHTML.includes('data-action="edit-entry" data-id="P"'));assert(root.innerHTML.includes('data-action="shared" data-id="G"'));
+ api.editEntry('shared:G:T:E');assert.equal(api.getState().editOriginal,null);api.leaveDaily();
+});
+
+test('production Firebase adapter wires transactions for existing-entry writes',()=>{
+ const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(index,/writeBatch, runTransaction } = m2/);
+ assert.match(index,/api:\{doc,collection,query,where,onSnapshot,setDoc,runTransaction\}/);
 });

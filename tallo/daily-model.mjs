@@ -21,10 +21,10 @@ export function shares(total,count){
  const cents=Math.round(total*100),base=Math.floor(cents/count),rest=cents%count;
  return Array.from({length:count},(_,i)=>(base+(i<rest?1:0))/100);
 }
-export function validateRecord(record, catalog={categories:CATEGORIES,accounts:DEFAULT_ACCOUNTS}){
+export function validateRecord(record, catalog={categories:CATEGORIES,accounts:DEFAULT_ACCOUNTS}, original=null){
  if(!['expense','income'].includes(record.type)||!Number.isSafeInteger(record.amount)||record.amount<=0||record.amount>10000000) throw new Error('請輸入 1 至 10,000,000 元的整數金額');
  if(!/^\d{4}-\d{2}-\d{2}$/.test(record.date)||Number.isNaN(Date.parse(record.date+'T00:00:00Z'))||new Date(record.date+'T00:00:00Z').toISOString().slice(0,10)!==record.date)throw new Error('請選擇有效日期');
- if(!catalog.categories.some(c=>c.id===record.category&&!c.archived)||!catalog.accounts.some(c=>c.id===record.account&&!c.archived))throw new Error('請選擇分類與帳戶');
+ if(!catalog.categories.some(c=>c.id===record.category&&(!c.archived||original?.category===record.category))||!catalog.accounts.some(c=>c.id===record.account&&(!c.archived||original?.account===record.account)))throw new Error('請選擇分類與帳戶');
  if(typeof record.note!=='string'||record.note.length>120)throw new Error('備註最多 120 字');
  if(record.split && (record.type!=='expense'||!Number.isInteger(record.split.count)||record.split.count<2||record.split.count>20))throw new Error('分帳人數需為 2 至 20 人');
  return record;

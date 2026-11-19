@@ -122,7 +122,7 @@ test('private ledger: only own budget may be changed',async()=>{
  await assertFails(setDoc(p(db('owner')),{amount:10,public:true}));
 });
 for(const [label,patch] of [['decimal',{amount:1.5}],['negative',{amount:-1}],['extra field',{public:true}],['unknown account',{account:'shared'}],['forged split',{split:{count:3}}],['wrong id',{id:'P2'}],['long note',{note:'x'.repeat(121)}]])test('private ledger rejects '+label,async()=>await assertFails(setDoc(doc(db('owner'),'users/owner/entries/P1'),{...personalEntry(),...patch})));
-test('private ledger income accepted and prior entries cannot be overwritten or deleted',async()=>{
+test('private ledger income accepted and unversioned overwrites or permanent deletion denied',async()=>{
  const p=doc(db('owner'),'users/owner/entries/P1');await assertSucceeds(setDoc(p,{...personalEntry(),type:'income'}));await assertFails(updateDoc(p,{amount:1}));await assertFails(deleteDoc(p));
 });
 
@@ -168,4 +168,38 @@ test('builtin defaults stay usable; renamed IDs and archived defaults are enforc
  await assertSucceeds(updateDoc(doc(d,'users/owner/categories/food'),{archived:false}));
  await assertSucceeds(setDoc(doc(d,'users/owner/accounts/cash'),{...catalogData(),archived:true}));
  await assertFails(setDoc(doc(d,'users/owner/entries/P2'),{...personalEntry(),id:'P2'}));
+});
+
+const editPatch=(revision=1)=>({amount:150,note:'Corrected',account:'bank',revision,updatedAt:Date.now(),deleted:false});
+test('owner edits personal details with version checks; other users and anonymous cannot edit',async()=>{
+ const d=db('owner'),p=doc(d,'users/owner/entries/P1');await assertSucceeds(setDoc(p,personalEntry()));
+ for(const other of [db('outsider'),env.unauthenticatedContext().firestore()])await assertFails(updateDoc(doc(other,'users/owner/entries/P1'),editPatch()));
+ await assertSucceeds(updateDoc(p,{...editPatch(),date:'2026-10-31',type:'income',category:'transport'}));
+ const e=(await getDoc(p)).data();if(e.amount!==150||e.createdAt<=0)throw Error('Edit failed');
+ await assertFails(updateDoc(p,{...editPatch(1),amount:1}));
+ await assertSucceeds(updateDoc(p,editPatch(2)));
+ for(const patch of [{createdAt:0},{id:'P2'},{amount:-1},{public:true},{account:'shared'},{revision:0},{deleted:'true'}])await assertFails(updateDoc(p,{...editPatch(3),...patch}));
+});
+test('soft delete and restore keep payload; editing a deleted entry and hard delete denied',async()=>{
+ const d=db('owner'),p=doc(d,'users/owner/entries/P1');await assertSucceeds(setDoc(p,personalEntry()));
+ await assertSucceeds(updateDoc(p,{deleted:true,revision:1,updatedAt:Date.now()}));
+ await assertFails(updateDoc(p,{...editPatch(2),deleted:true}));
+ await assertFails(updateDoc(p,{...editPatch(2),deleted:false}));
+ await assertFails(deleteDoc(p));
+ await assertSucceeds(updateDoc(p,{deleted:false,revision:2,updatedAt:Date.now()}));
+ await assertSucceeds(updateDoc(p,editPatch(3)));
+});
+test('archived references can remain on old edits/restores but cannot be chosen for new entries',async()=>{
+ const d=db('owner'),p=doc(d,'users/owner/entries/P1');await assertSucceeds(setDoc(p,personalEntry()));
+ await assertSucceeds(setDoc(doc(d,'users/owner/categories/food'),{...catalogData(),archived:true}));
+ await assertSucceeds(setDoc(doc(d,'users/owner/accounts/cash'),{...catalogData(),archived:true}));
+ await assertSucceeds(updateDoc(p,{note:'Fix only note',deleted:false,revision:1,updatedAt:Date.now()}));
+ await assertSucceeds(updateDoc(p,{deleted:true,revision:2,updatedAt:Date.now()}));
+ await assertSucceeds(updateDoc(p,{deleted:false,revision:3,updatedAt:Date.now()}));
+ await assertFails(setDoc(doc(d,'users/owner/entries/P2'),{...personalEntry(),id:'P2'}));
+ await assertSucceeds(updateDoc(p,{category:'daily',account:'bank',deleted:false,revision:4,updatedAt:Date.now()}));
+ await assertFails(updateDoc(p,{category:'food',deleted:false,revision:5,updatedAt:Date.now()}));
+});
+test('new records cannot start hidden or with forged revision metadata',async()=>{
+ for(const patch of [{deleted:true},{deleted:false},{revision:1},{updatedAt:1}])await assertFails(setDoc(doc(db('owner'),'users/owner/entries/P1'),{...personalEntry(),...patch}));
 });

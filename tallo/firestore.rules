@@ -76,18 +76,29 @@ service cloud.firestore {
         allow delete: if false;
       }
       match /entries/{eid} {
-        function validPersonal(e){
+        function validPersonal(e,existing){
           return e.keys().hasAll(['id','date','type','amount','category','note','account','split','createdAt'])
-            && e.keys().hasOnly(['id','date','type','amount','category','note','account','split','createdAt'])
+            && e.keys().hasOnly(['id','date','type','amount','category','note','account','split','createdAt','deleted','revision','updatedAt'])
             && e.id == eid && e.date is string && e.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
             && e.type in ['expense','income'] && e.amount is int && e.amount > 0 && e.amount <= 10000000
-            && validPersonalCategory(uid,e.category)
-            && e.note is string && e.note.size() <= 120 && validPersonalAccount(uid,e.account)
+            && ((existing && e.category == resource.data.category) || validPersonalCategory(uid,e.category))
+            && e.note is string && e.note.size() <= 120 && ((existing && e.account == resource.data.account) || validPersonalAccount(uid,e.account))
             && e.split == null && e.createdAt is number;
         }
         allow read: if signedIn() && request.auth.uid == uid;
-        allow create: if signedIn() && request.auth.uid == uid && validPersonal(request.resource.data);
-        allow update,delete: if false;
+        allow create: if signedIn() && request.auth.uid == uid && validPersonal(request.resource.data,false)
+          && !request.resource.data.keys().hasAny(['deleted','revision','updatedAt']);
+        allow update: if signedIn() && request.auth.uid == uid && validPersonal(request.resource.data,true)
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.deleted is bool
+          && request.resource.data.revision is int
+          && request.resource.data.revision == resource.data.get('revision',0) + 1
+          && request.resource.data.updatedAt is int && request.resource.data.updatedAt >= 0
+          && (
+            (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deleted','revision','updatedAt']))
+            || (resource.data.get('deleted',false) == false && request.resource.data.deleted == false)
+          );
+        allow delete: if false;
       }
       match /settings/{setting} {
         allow read: if signedIn() && request.auth.uid == uid;
